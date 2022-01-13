@@ -1,3 +1,44 @@
 # asr-server
 
-asr 自研服务
+## 注意事项
+
+本项目使用async 定义 fastapi 接口函数，但是通过Cython编译成 .so 文件后会报错，这应该是 Cython 的问题。
+work around 的方法是修改fastapi的源码文件 routing.py 里面的 get_request_handler() ：
+
+```python
+def get_request_handler(
+
+    . . . . . .
+
+) -> Callable:
+    assert dependant.call is not None, "dependant.call must be a function"
+    is_coroutine = asyncio.iscoroutinefunction(dependant.call)
+    is_body_form = body_field and isinstance(body_field.field_info, params.Form)
+
+    async def app(request: Request) -> Response:
+
+        . . . . . . 
+
+        if errors:
+            raise RequestValidationError(errors, body=body)
+        else:
+            raw_response = await run_endpoint_function(
+                dependant=dependant, values=values, is_coroutine=is_coroutine
+            )
+
+            ####### Insert here #######
+            if asyncio.iscoroutine(raw_response):
+                raw_response = await raw_response
+            ###########################
+
+            if isinstance(raw_response, Response):
+                if raw_response.background is None:
+                    raw_response.background = background_tasks
+                return raw_response
+
+            . . . . . .
+
+            return response
+
+    return app
+```
