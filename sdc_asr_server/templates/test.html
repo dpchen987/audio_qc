@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>语音识别Demo</title>
+  <script src="/static/js/jquery-3.2.1.min.js"></script>
+  <script src="/static/js/recorder/recorder.wav.min.js"></script>
+  <script src="/static/js/recorder/extensions/lib.fft.js"></script>
+  <script src="/static/js/recorder/extensions/frequency.histogram.view.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+</head>
+
+<body>
+  <div class="asr-content">
+    <div class="audio-banner">
+        <div class="text-content">
+          <p><span class="title">语音识别 Demo</span></p>
+        </div>
+    </div>
+    <div class="audio-experience">
+      <div class="asr-box">
+        <div id="client-word-recorder" style="position: relative;">
+          <div class="pd">
+            <div style="text-align:center;height:20px;width:100%;
+                        border:0px solid #bcbcbc;color:#000;box-sizing: border-box;display:inline-block"
+              class="recwave">
+            </div>
+          </div>
+        </div>
+        <div class="voice-container">
+          <div class="voice-input">
+            <div class="start-voice">
+              <button type="primary" id="beginBtn" class="voice-btn">
+                <span class="fa fa-microphone"> 开始识别</span>
+              </button>
+              <button type="primary" id="endBtn" class="voice-btn end">
+                <span class="fa fa-microphone-slash"> 结束识别</span>
+              </button>
+              <div id="timeBox" class="time-box flex-display-1">
+                <span class="total-time">识别中，<i id="timeCount"></i> 秒后自动停止识别</span>
+              </div>
+            </div>
+          </div>
+          <div class="voice">
+            <p id="rec_status"></p>
+            <div class="result-text" id="resultPanel">此处显示识别结果</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    var timeLoop = null;
+    var result = "";
+    var wave = null;
+    wave = Recorder.FrequencyHistogramView({
+      elem: '.recwave',
+      lineCount: 90,
+      position: 0,
+      minHeight: 1,
+      stripeEnable: false
+    });
+    
+    var rec = null;
+    $(document).ready(function () {
+      $('#beginBtn').on('click', startRecording)
+      $('#endBtn').on('click', stopRecording)
+    });
+
+    function startRecording() {
+      rec = Recorder({
+        type: "wav",
+        sampleRate: "16000",
+        bitRate: 16,
+        onProcess: function(buffers, level, time, sampleRate) {
+          wave.input(buffers[buffers.length - 1], level, sampleRate);
+        }
+      });
+      rec.open(function(){
+        rec.start();
+      }, function(msg, isUserNotAllow) {
+        console.log((isUserNotAllow? "UserNotAllow,": "") + "无法录音:" + msg);
+      });
+      //setTimeout(function(){rec.stop(function(blob,duration){})});
+
+      // Change button state
+      $('#beginBtn').hide()
+      $('#endBtn, #timeBox').addClass('show')
+      // Start countdown
+      var seconds = 180
+      $('#timeCount').text(seconds)
+      timeLoop = setInterval(function () {
+        seconds--
+        $('#timeCount').text(seconds)
+        if (seconds === 0) {
+          stopRecording()
+        }
+      }, 1000)
+    }
+
+    function stopRecording() {
+      rec.stop(function(blob, duration) {
+        console.log('duration: ' + duration);
+        $('#rec_status').text('开始识别...');
+        var form = new FormData();
+        form.append("upfile", blob, "recorder.mp3");
+        $.ajax({
+          url: "/asr/v1/rec",
+          type: "POST",
+          //contentType: "multipart/form-data",
+          contentType: 'application/octet-stream',
+          processData: false,
+          headers: {appkey: "123"},
+          data: blob,
+          success: function(data) {
+            console.log(data);
+            $('#rec_status').text('识别成功');
+            $('#resultPanel').text(data.result);
+          },
+          error: function(s, status, err) {
+            console.error('服务器响应错误：', s);
+            console.log("error:"+err);
+            $('#rec_status').text(err);
+          }
+        }, function(msg) {
+          var msg = "录音失败：" + msg;
+          console.log(msg);
+          $('#rec_status').text(msg);
+          rec.close();
+          rec = null;
+        });
+      });
+      $('#endBtn').add($('#timeBox')).removeClass('show')
+      $('#beginBtn').show()
+      $('#timeCount').text('')
+      clearInterval(timeLoop);
+    }
+    
+  </script>
+</body>
+
+</html>
