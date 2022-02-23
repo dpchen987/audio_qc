@@ -41,6 +41,7 @@
               <div id="timeBox" class="time-box flex-display-1">
                 <span class="total-time">识别中，<i id="timeCount"></i> 秒后自动停止识别</span>
               </div>
+              <div id="audio_play" style="display:inline"></div>
             </div>
           </div>
           <div class="voice">
@@ -88,6 +89,7 @@
       // Change button state
       $('#beginBtn').hide()
       $('#endBtn, #timeBox').addClass('show')
+      $('#audio_play').empty();
       // Start countdown
       var seconds = 180
       $('#timeCount').text(seconds)
@@ -103,6 +105,10 @@
     function stopRecording() {
       rec.stop(function(blob, duration) {
         console.log('duration: ' + duration);
+        var audio = document.createElement("audio");
+        audio.controls = true;
+        $('#audio_play').append(audio);
+        audio.src=(window.URL||webkitURL).createObjectURL(blob);
         $('#rec_status').text('开始识别...');
         var form = new FormData();
         form.append("upfile", blob, "recorder.mp3");
