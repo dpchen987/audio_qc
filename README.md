@@ -1,5 +1,25 @@
 # asr-server
 
+本项目是给 业务调用ASR服务的，其功能包括：
+
+1. 权限验证
+2. VAD
+3. 访问 wenet websocket 服务进行ASR
+
+## 运行
+
+首先要先运行wenet websocket服务，测试服务器有可执行环境可测试： /mnt/ai/share/wenet-demo/docker
+执行 `run-in-host.sh` 即可，执行前可修改其中的port。
+
+然后再运行asr-server，如下：
+
+```bash
+git clone -b develop http://dev.day-care.cn/gitlab/yshy/asr-server.git
+cd asr-server
+python -m sdc_asr_server.main
+```
+
+
 ## 注意事项
 
 本项目使用async 定义 fastapi 接口函数，但是通过Cython编译成 .so 文件后会报错，这应该是 Cython 的问题。
