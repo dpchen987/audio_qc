@@ -90,12 +90,15 @@ async def rec(audio_origin):
     with open('z-origin.wav', 'wb') as f:
         f.write(audio_origin)
     segments, duration = vad.vad(audio_origin)
-    texts = []
+    tasks = []
     i = 0
     for s in segments:
         i += 1
         print('\t==== segm:', i)
-        text = await ws_rec(s.astype('int16').tobytes())
+        tasks.append(ws_rec(s.astype('int16').tobytes()))
+    texts = []
+    for task in tasks:
+        text = await task
         texts.append(text)
     timing = time.time() - b
     if not texts:
