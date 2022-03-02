@@ -53,7 +53,7 @@ def get_ws():
 
 async def ws_rec(data):
     ws = get_ws()
-    logger.info(f'connect to {ws}')
+    # logger.info(f'connect to {ws}')
     texts = []
     conn = await websockets.connect(ws)
     # async with websockets.connect(ws) as conn:
@@ -87,24 +87,31 @@ async def ws_rec(data):
 
 async def rec(audio_origin):
     b = time.time()
-    with open('z-origin.wav', 'wb') as f:
-        f.write(audio_origin)
-    segments, duration = vad.vad(audio_origin)
+    # with open('z-origin.wav', 'wb') as f:
+    #     f.write(audio_origin)
+    segments, duration, samplerate = vad.vad(audio_origin)
+    logger.info(f'vad time: {time.time()-b}, audio {duration=}')
+    max_len = 0
     tasks = []
     i = 0
     for s in segments:
         i += 1
-        print('\t==== segm:', i)
-        tasks.append(ws_rec(s.astype('int16').tobytes()))
+        # print('\t==== segm:', i, type(s), s.shape)
+        d = len(s) / samplerate
+        if d > max_len:
+            max_len = d
+        t = asyncio.create_task(ws_rec(s.astype('int16').tobytes()))
+        tasks.append(t)
     texts = []
     for task in tasks:
         text = await task
         texts.append(text)
     timing = time.time() - b
     if not texts:
-        text = 'no speech detected'
-    else:
-        text = ','.join(texts)
-    logger.info(f"rec text: {text}")
-    logger.info(f'process data of [{len(audio_origin)}] of duration[{duration}] seconds, time use:{timing}')
-    return text
+        texts = ['no speech detected']
+    # else:
+    #     text = ','.join(texts)
+    # logger.info(f"rec text: {text}")
+    logger.info(f'[{len(audio_origin)}], duration[{duration}] seconds, time use:{timing}, segment {max_len=}, segments:{i}')
+    print(f'{len(texts) = }')
+    return ','.join(texts)
