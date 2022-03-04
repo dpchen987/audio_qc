@@ -37,13 +37,15 @@ async def test_coro(i, audio_data):
     b = time.time()
     async with aiohttp.ClientSession() as session:
         async with session.post(api, data=audio_data, headers=headers) as resp:
-            t = await resp.text()
+            text = await resp.text()
     e = time.time()
-    print(f'coro-{i} time cost: {e-b}')
-    return t
+    print(f'coro-{i} time cost: {e-b}, {len(text)=}')
+    return text
 
 
-async def test_multi(audio_file, count=4):
+async def test_multi(audio_file, count=6):
+    b = time.time()
+    print('start @', b)
     with open(audio_file, 'rb') as f:
         data = f.read()
     tasks = []
@@ -52,6 +54,9 @@ async def test_multi(audio_file, count=4):
         tasks.append(t)
     for t in tasks:
         await t
+    e = time.time()
+    print('done @', e)
+    print('time ', e - b)
 
 
 
