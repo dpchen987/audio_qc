@@ -9,7 +9,7 @@ VAD = GPVAD()
 
 def cut(timeline, data, samplerate):
     for tl in timeline:
-        if tl[1] - tl[0] < 1000:
+        if tl[1] - tl[0] < 500:
             logger.info(f'too short audio segment {tl[1]-tl[0]}')
             continue
         start = int(tl[0] / 1000 * samplerate)
