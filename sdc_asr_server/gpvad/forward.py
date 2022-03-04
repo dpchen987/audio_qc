@@ -1,5 +1,9 @@
+import time
 import os
 import torch
+from torch import nn
+from torch.utils import mkldnn as mkldnn_utils
+import intel_extension_for_pytorch as ipex
 import numpy as np
 import librosa
 import soundfile as sf
@@ -85,7 +89,7 @@ def connect_(pairs, n=1):
     Connects two adjacent clusters if their distance is <= n
 
     :param pairs: Clusters of iterateables e.g., [(1,5),(7,10)]
-    :param n: distance between two clusters 
+    :param n: distance between two clusters
     """
     if len(pairs) == 0:
         return []
@@ -158,7 +162,7 @@ def _decode_with_timestamps(encoder, labels):
     return result_labels
 
 
-def extract_feature(wavefilepath): 
+def extract_feature(wavefilepath):
     wav, sr = sf.read(wavefilepath, dtype='float32')
     if wav.ndim > 1:
         wav = wav.mean(-1)
@@ -168,17 +172,22 @@ def extract_feature(wavefilepath):
     return np.log(mel + EPS).T
 
 
-def extract_feature_mem(wav, sr): 
+def extract_feature_mem(wav, sr):
     if wav.ndim > 1:
         wav = wav.mean(-1)
     print('---------', wav.shape, wav.dtype)
     if wav.dtype != 'float32':
         print('\t-----> change to float32')
         wav = wav.astype('float32')
-    wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
+    if sr != SAMPLE_RATE:
+        b = time.time()
+        wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
+        print('---------- resample time', time.time() - b)
     print('---------', wav.shape, wav.dtype)
+    b = time.time()
     mel = librosa.feature.melspectrogram(
         wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
+    print('---------- mel feature time', time.time() - b)
     return np.log(mel + EPS).T
 
 
@@ -190,6 +199,10 @@ class GPVAD:
             outputdim=2,
             pretrained_from=model_path
         ).to(DEVICE).eval()
+        # self.model = ipex.optimize(self.model)
+        # self.model = mkldnn_utils.to_mkldnn(self.model)
+        # self.model = torch.jit.script(self.model)
+        # self.model = self.model.to(memory_format=torch.channels_last)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pth')
         self.encoder = torch.load(encoder_path)
@@ -198,15 +211,22 @@ class GPVAD:
         self.postprocessing_method = double_threshold
 
     def vad(self, audio_path):
-        wav, sr = librosa.load(audio_path, sr=16000)
-        return self.vad_mem(wav, sr)
+        b = time.time()
+        wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_vhq")
+        print('---------------- librosa.load() time ', time.time() - b)
+        b = time.time()
+        ss = self.vad_mem(wav, sr)
+        print('---------------- vad_mem() time ', time.time() - b)
+        return ss
 
     def vad_mem(self, wav, sr):
         feature = extract_feature_mem(wav, sr)
         feature = np.expand_dims(feature, axis=0)
+        print(f'{feature.shape = }')
         output = []
         with torch.no_grad():
             feature = torch.as_tensor(feature).to(DEVICE)
+            #feature = feature.to_mkldnn()
             prediction_tag, prediction_time = self.model(feature)
             prediction_tag = prediction_tag.to('cpu')
             prediction_time = prediction_time.to('cpu')
@@ -220,7 +240,7 @@ class GPVAD:
                     output.append([start*self.model_resolution, end*self.model_resolution])
         return output
 
-    
+
 if __name__ == "__main__":
     from sys import argv
     import time
