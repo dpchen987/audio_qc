@@ -3,24 +3,12 @@ import asyncio
 import json
 import time
 import numpy as np
-import websockets
 import soundfile as sf
-import librosa
 import aiohttp
 from io import BytesIO
 from sdc_asr_server import vad_gpvad as vad
 from sdc_asr_server.logger import logger
-from sdc_asr_server import config
-
-
-WS_START = json.dumps({
-    'signal': 'start',
-    'nbest': 1,
-    'continuous_decoding': False,
-})
-WS_END = json.dumps({
-    'signal': 'end'
-})
+from sdc_asr_server.ws_query import ws_rec
 
 
 async def download(url):
@@ -39,41 +27,6 @@ async def download(url):
         data = b''
         msg = 'download audio url failed with exception: {}'.format(e)
     return data, msg
-
-
-
-async def ws_rec(data):
-    ws = config.get_ws()
-    # logger.info(f'connect to {ws}')
-    texts = []
-    conn = await websockets.connect(ws, open_timeout=60, close_timeout=60)
-    # async with websockets.connect(ws) as conn:
-    # step 1: send start
-    await conn.send(WS_START)
-    ret = await conn.recv()
-    # step 2: send audio data
-    await conn.send(data)
-    # step 3: send end
-    await conn.send(WS_END)
-    # step 3: receive result
-    i = 0
-    while 1:
-        i += 1
-        ret = await conn.recv()
-        # print('ws recv loop', i, ret)
-        ret = json.loads(ret)
-        if ret['type'] == 'final_result':
-            nbest = json.loads(ret['nbest'])
-            text = nbest[0]['sentence']
-            texts.append(text)
-        elif ret['type'] == 'speech_end':
-            # print('=======', ret)
-            break
-    try:
-        await conn.close()
-    except Exception as e:
-        logger.error(e)
-    return ''.join(texts)
 
 
 async def rec(audio_origin):
