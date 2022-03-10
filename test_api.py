@@ -7,17 +7,20 @@ import aiohttp
 
 
 api = 'http://127.0.0.1:8300/asr/v1/rec'
-# api = 'https://httpbin.org/post'
 
-def test_one(audio_file):
+
+def test_one(audio_file, url=False):
     headers = {
         'appkey': '123',
         'format': 'pcm',
-        # 'audio-url': 'https://yinshuhuiyuan-oss-10001.oss.jingan-hlw.inspurcloudoss.com/video/AHC0022101232683/908159455844241408/1636615795209.opus'
         #'Content-Type': 'application/octet-stream',
     }
+    if url:
+        headers['audio-url'] = 'https://yinshuhuiyuan-oss-10001.oss.jingan-hlw.inspurcloudoss.com/video/AHC0022101232683/908159455844241408/1636615795209.opus'
     if 'audio-url' in headers:
+        b = time.time()
         r = requests.post(api, headers=headers)
+        e = time.time()
     else:
         with open(audio_file, 'rb') as f:
             data = f.read()
@@ -64,7 +67,7 @@ if __name__ == '__main__':
     from sys import argv
     if len(argv) == 2:
         fn = argv[1]
-        test_one(fn)
+        test_one(fn, True)
     elif len(argv) == 3:
         fn = argv[1]
         count = int(argv[2])
