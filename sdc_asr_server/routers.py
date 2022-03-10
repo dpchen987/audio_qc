@@ -73,6 +73,8 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
         return ASRResponse(**error)
     result = await asr_process.rec(audio)
     response = {
+        'status': 2000,
+        'message': 'ok',
         'taskid': '123',
         'result': result,
     }
