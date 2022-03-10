@@ -55,7 +55,7 @@ async def ws_rec(data):
     ws = get_ws()
     # logger.info(f'connect to {ws}')
     texts = []
-    conn = await websockets.connect(ws)
+    conn = await websockets.connect(ws, open_timeout=60, close_timeout=60)
     # async with websockets.connect(ws) as conn:
     # step 1: send start
     await conn.send(WS_START)
