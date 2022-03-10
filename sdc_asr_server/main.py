@@ -5,7 +5,7 @@ from starlette.responses import HTMLResponse
 
 from sdc_asr_server.routers import router
 from sdc_asr_server.logger import logger
-from sdc_asr_server.config import ARGS
+from sdc_asr_server import config
 
 from fastapi.staticfiles import StaticFiles
 root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,9 +39,8 @@ def run():
     import uvicorn
     from sys import argv
     reload = False
-    if len(argv) > 1 and argv[1] == 're':
-        reload = True
-    uvicorn.run('sdc_asr_server.main:app', host=ARGS.host, port=ARGS.port, reload=reload)
+    config.ARGS = config.parse_args()
+    uvicorn.run('sdc_asr_server.main:app', host=config.ARGS.host, port=config.ARGS.port, reload=reload)
 
 
 if __name__ == '__main__':
