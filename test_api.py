@@ -43,7 +43,7 @@ async def test_coro(i, audio_data):
     return text
 
 
-async def test_multi(audio_file, count=6):
+async def test_multi(audio_file, count=16):
     b = time.time()
     print('start @', b)
     with open(audio_file, 'rb') as f:
@@ -62,9 +62,12 @@ async def test_multi(audio_file, count=6):
 
 if __name__ == '__main__':
     from sys import argv
-    opt = argv[1]
-    fn = argv[2]
-    if opt == 'one':
+    if len(argv) == 2:
+        fn = argv[1]
         test_one(fn)
+    elif len(argv) == 3:
+        fn = argv[1]
+        count = int(argv[2])
+        asyncio.run(test_multi(fn, count))
     else:
-        asyncio.run(test_multi(fn))
+        print('bad args')
