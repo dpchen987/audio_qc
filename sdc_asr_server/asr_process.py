@@ -10,10 +10,9 @@ import aiohttp
 from io import BytesIO
 from sdc_asr_server import vad_gpvad as vad
 from sdc_asr_server.logger import logger
-from sdc_asr_server.config import ARGS
+from sdc_asr_server import config
 
 
-WS_INDEX = 0
 WS_START = json.dumps({
     'signal': 'start',
     'nbest': 1,
@@ -42,17 +41,9 @@ async def download(url):
     return data, msg
 
 
-def get_ws():
-    if len(ARGS.ws) == 1:
-        return ARGS.ws[0]
-    global WS_INDEX
-    idx = WS_INDEX / len(ARGS.ws)
-    WS_INDEX = idx + 1
-    return ARGS.ws[idx]
-
 
 async def ws_rec(data):
-    ws = get_ws()
+    ws = config.get_ws()
     # logger.info(f'connect to {ws}')
     texts = []
     conn = await websockets.connect(ws, open_timeout=60, close_timeout=60)
