@@ -3,9 +3,9 @@ from typing import Optional
 from urllib import response
 from fastapi import APIRouter
 from fastapi import Depends, Body, Request, File, UploadFile
-from sdc_asr_server import __version__
-from sdc_asr_server import asr_process
-from sdc_asr_server.data_model.api_model import ASRQuery, ASRResponse, ASRHeaer
+from asr_api_server import __version__
+from asr_api_server import asr_process
+from asr_api_server.data_model.api_model import ASRQuery, ASRResponse, ASRHeaer
 
 
 def auth(appkey):

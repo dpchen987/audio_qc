@@ -6,9 +6,9 @@ import numpy as np
 import soundfile as sf
 import aiohttp
 from io import BytesIO
-from sdc_asr_server import vad_gpvad as vad
-from sdc_asr_server.logger import logger
-from sdc_asr_server.ws_query import ws_rec
+from asr_api_server import vad_gpvad as vad
+from asr_api_server.logger import logger
+from asr_api_server.ws_query import ws_rec
 
 
 async def download(url):

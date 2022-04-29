@@ -1,7 +1,7 @@
 from io import BytesIO
 import soundfile as sf
-from sdc_asr_server.gpvad.forward import GPVAD
-from sdc_asr_server.logger import logger
+from asr_api_server.gpvad.forward import GPVAD
+from asr_api_server.logger import logger
 
 
 VAD = GPVAD()

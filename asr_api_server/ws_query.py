@@ -1,8 +1,8 @@
 
 import json
 import websockets
-from sdc_asr_server import config
-from sdc_asr_server.logger import logger
+from asr_api_server import config
+from asr_api_server.logger import logger
 
 
 WS_START = json.dumps({

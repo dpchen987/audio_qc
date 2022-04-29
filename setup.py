@@ -9,7 +9,7 @@ from setuptools.command.build_py import build_py as build_py_orig
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 
-pkg_name = 'sdc_asr_server'
+pkg_name = 'asr_api_server'
 
 def get_version():
     with open(f'{pkg_name}/__init__.py') as f:
@@ -25,20 +25,20 @@ def get_version():
 def get_package_data():
     from glob import glob
     files = []
-    files += glob('sdc_asr_server/static/js/*.js')
-    files += glob('sdc_asr_server/static/js/recorder/*.js')
-    files += glob('sdc_asr_server/static/js/recorder/*/*.js')
-    files += glob('sdc_asr_server/static/css/*.css')
-    files += glob('sdc_asr_server/static/fonts/*')
-    files += glob('sdc_asr_server/templates/*.html')
-    files += glob('sdc_asr_server/gpvad/labelencoders/*.pth')
-    files += glob('sdc_asr_server/gpvad/pretrained_models/*/*.pth')
+    files += glob('asr_api_server/static/js/*.js')
+    files += glob('asr_api_server/static/js/recorder/*.js')
+    files += glob('asr_api_server/static/js/recorder/*/*.js')
+    files += glob('asr_api_server/static/css/*.css')
+    files += glob('asr_api_server/static/fonts/*')
+    files += glob('asr_api_server/templates/*.html')
+    files += glob('asr_api_server/gpvad/labelencoders/*.pth')
+    files += glob('asr_api_server/gpvad/pretrained_models/*/*.pth')
     new = []
     for f in files:
         p = f.find('/')
         n = f[p+1:]
         new.append(n)
-    return new 
+    return new
 
 print(get_package_data())
 
@@ -102,7 +102,7 @@ def main(use_cython=False):
         ext_modules=ext_modules,
         entry_points={
             'console_scripts': [
-                'sdc_asr_server=sdc_asr_server.main:run',
+                'asr_api_server=asr_api_server.main:run',
             ]
         },
         package_data={pkg_name: get_package_data()},
@@ -110,7 +110,7 @@ def main(use_cython=False):
         cmdclass={
             'build_py': build_py
         },
-        
+
     )
 
 
