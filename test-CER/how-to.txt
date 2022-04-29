@@ -1,0 +1,17 @@
+1. 准备测试数据，kaldi wav_scp 格式，参考文件：
+    ./z-test-scp.txt
+    ./z-test-trans.txt
+
+2. 阿里云识别，或SDC识别，运行：
+    ./asr_aliyun.py
+    ./asr_sdc.py
+
+3. 对文本(标准答案、识别结果）进行normalize:
+    ./textnorm_zh.py --to_lower --has_key
+
+
+4. 计算CER：
+    ./asr-score --tokenizer char
+
+
+以上脚本运行是注意参数
