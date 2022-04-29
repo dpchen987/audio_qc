@@ -3,7 +3,6 @@ import os
 import torch
 from torch import nn
 from torch.utils import mkldnn as mkldnn_utils
-import intel_extension_for_pytorch as ipex
 import numpy as np
 import librosa
 import soundfile as sf
