@@ -56,7 +56,8 @@ async def test_multi(audio_file, count=16):
         t = asyncio.create_task(test_coro(i, data))
         tasks.append(t)
     for t in tasks:
-        await t
+        res = await t
+        print(res)
     e = time.time()
     print('done @', e)
     print('time ', e - b)
