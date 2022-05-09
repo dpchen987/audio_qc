@@ -1,0 +1,14 @@
+aiohttp==3.8.1
+Cython==3.0.0a10
+fastapi==0.75.2
+librosa==0.8.1
+pydantic==1.8.2
+scikit_learn==0.23.1
+SoundFile==0.10.3.post1
+starlette==0.17.1
+uvicorn==0.16.0
+websockets==10.1
+typing_extensions==4.2.0
+python-multipart==0.0.5
+numpy==1.21.6
+torch==1.11.0
