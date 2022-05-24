@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-import time
+import time, os, sys
 import requests
 import asyncio
 import aiohttp
 
 
 api = 'http://127.0.0.1:8300/asr/v1/rec'
-
+pth = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
 
 def test_one(audio_file, url=False):
     headers = {
@@ -65,13 +65,14 @@ async def test_multi(audio_file, count=16):
 
 
 if __name__ == '__main__':
-    from sys import argv
-    if len(argv) == 2:
-        fn = argv[1]
-        test_one(fn, True)
-    elif len(argv) == 3:
-        fn = argv[1]
-        count = int(argv[2])
-        asyncio.run(test_multi(fn, count))
-    else:
-        print('bad args')
+    test_one(pth)
+    # from sys import argv
+    # if len(argv) == 2:
+    #     fn = argv[1]
+    #     test_one(fn, True)
+    # elif len(argv) == 3:
+    #     fn = argv[1]
+    #     count = int(argv[2])
+    #     asyncio.run(test_multi(fn, count))
+    # else:
+    #     print('bad args')

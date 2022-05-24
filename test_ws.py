@@ -3,14 +3,19 @@
 
 
 import time
-import sys
+import sys, os
 import asyncio
-from sdc_asr_server.ws_query import ws_rec
+path1 = os.path.dirname(__file__)
+print(path1)
+sys.path.append(path1)
+# print(sys.path)
+from asr_api_server.ws_query import ws_rec
 
 
+pth = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
 async def main():
     print('start...')
-    fn = sys.argv[1]
+    fn = pth
     with open(fn, 'rb') as f:
         data = f.read()
     b = time.time()
