@@ -5,7 +5,7 @@
 import time
 import sys
 import asyncio
-from sdc_asr_server.ws_query import ws_rec
+from asr_api_server.ws_query import ws_rec
 
 
 async def main():
