@@ -196,10 +196,6 @@ class GPVAD:
             outputdim=2,
             pretrained_from=model_path
         ).eval()
-        # self.model = ipex.optimize(self.model)
-        # self.model = mkldnn_utils.to_mkldnn(self.model)
-        # self.model = torch.jit.script(self.model)
-        # self.model = self.model.to(memory_format=torch.channels_last)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pth')
         self.encoder = torch.load(encoder_path)
@@ -213,7 +209,7 @@ class GPVAD:
         print('---------------- librosa.load() time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
-        print('---------------- vad_mem() time ', time.time() - b)
+        print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
         return ss
 
     def vad_mem(self, wav, sr):
@@ -223,7 +219,6 @@ class GPVAD:
         output = []
         with torch.no_grad():
             feature = torch.as_tensor(feature)
-            #feature = feature.to_mkldnn()
             prediction_tag, prediction_time = self.model(feature)
             if prediction_time is not None:  # Some models do not predict timestamps
                 thresholded_prediction = self.postprocessing_method(
