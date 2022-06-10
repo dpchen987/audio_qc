@@ -96,7 +96,7 @@ async def main(wav_scp_file, trans_text_file, concurrence):
     print('time cost:', e-b)
     # caculate CER
     cmd = (f'python ../test-model/compute-wer.py --char=1 --v=1 '
-           f'{trans_text_file} {asr_trans} > {__file__}-{concurrence}.wer')
+           f'{trans_text_file} {asr_trans} > {__file__}-test-{concurrence}.cer.txt')
     print(cmd)
     os.system(cmd)
     print('done')
