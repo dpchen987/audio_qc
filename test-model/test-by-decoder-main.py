@@ -82,9 +82,9 @@ def main(args):
     # 5. parse log
     asr_trans = f'{result_prefix}-asr-trans.txt'
     parse_log(f'{result_prefix}-log.txt', asr_trans)
-    # 5. comput wer
+    # 5. comput cer
     cmd = (f'python compute-wer.py --char=1 --v=1 '
-           f'{trans} {asr_trans} > {result_prefix}.wer')
+           f'{trans} {asr_trans} > {result_prefix}.cer.txt')
     print(cmd)
     os.system(cmd)
     print('done')
