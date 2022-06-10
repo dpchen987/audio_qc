@@ -1,18 +1,18 @@
 # encoding: utf8
-from typing import Optional
-from urllib import response
 from fastapi import APIRouter
-from fastapi import Depends, Body, Request, File, UploadFile
+from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
 from asr_api_server import asr_process
-from asr_api_server.data_model.api_model import ASRQuery, ASRResponse, ASRHeaer
+from asr_api_server.logger import logger
+from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer
 
 
 def auth(appkey):
-    return appkey=='123'
+    return appkey == '123'
 
 
 router = APIRouter()
+
 
 @router.get('/status')
 async def is_running():
@@ -20,7 +20,9 @@ async def is_running():
 
 
 @router.post("/rec_file", response_model=ASRResponse)
-async def recognize(query: ASRHeaer = Depends(), afile: UploadFile = File(...)):
+async def recognize_file(
+        query: ASRHeaer = Depends(),
+        afile: UploadFile = File(...)):
     '''识别语音为文本，接收Form Data形式上传音频文件
     '''
     error = {
@@ -53,7 +55,6 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
         'status': 4001,
         'message': 'Auth failed'
     }
-    print(request.headers)
     if not auth(query.appkey):
         return ASRResponse(**error)
     if query.audio_url:
@@ -71,13 +72,16 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
         error['status'] = 4002
         error['message'] = 'no audio data'
         return ASRResponse(**error)
-    result = await asr_process.rec(audio)
+    text, exception = await asr_process.rec(audio)
     response = {
         'status': 2000,
-        'message': 'ok',
+        'message': 'success',
         'taskid': '123',
-        'result': result,
+        'text': text,
+        'exception': exception,
     }
+    if exception:
+        response['status'] = 4004
+        response['message'] = f'{exception} times of getting exception'
+    print(response)
     return ASRResponse(**response)
-
-
