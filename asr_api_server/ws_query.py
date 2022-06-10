@@ -17,7 +17,7 @@ WS_END = json.dumps({
 
 async def ws_rec(data):
     ws = config.get_ws()
-    # logger.info(f'connect to {ws}')
+    logger.info(f'connect to {ws}')
     texts = []
     conn = await websockets.connect(ws)
     # async with websockets.connect(ws) as conn:

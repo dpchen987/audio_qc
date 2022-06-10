@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-import time
+import time, os, sys
 import requests
 import asyncio
 import aiohttp
 
 
 api = 'http://127.0.0.1:8300/asr/v1/rec'
-
+pth = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
 
 def test_one(audio_file, url=False):
     headers = {
