@@ -3,20 +3,14 @@
 
 
 import time
-import sys, os
+import sys
 import asyncio
-path1 = os.path.dirname(__file__)
-print(path1)
-sys.path.append(path1)
-# print(sys.path)
 
 from asr_api_server.ws_query import ws_rec
 
 
-pth = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
-async def main():
+async def main(fn):
     print('start...')
-    fn = pth
     with open(fn, 'rb') as f:
         data = f.read()
     b = time.time()
@@ -25,4 +19,5 @@ async def main():
     print(f'{len(text) = }', time.time() - b)
 
 
-asyncio.run(main())
+fn = sys.argv[1]
+asyncio.run(main(fn))

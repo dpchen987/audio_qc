@@ -13,7 +13,7 @@ def test_one(audio_file, url=False):
     headers = {
         'appkey': '123',
         'format': 'pcm',
-        #'Content-Type': 'application/octet-stream',
+        # 'Content-Type': 'application/octet-stream',
     }
     if url:
         headers['audio-url'] = 'https://yinshuhuiyuan-oss-10001.oss.jingan-hlw.inspurcloudoss.com/video/AHC0022101232683/908159455844241408/1636615795209.opus'
@@ -64,16 +64,17 @@ async def test_multi(audio_file, count=16):
     print('time ', e - b)
 
 
-
 if __name__ == '__main__':
-    test_one(pth)
-    # from sys import argv
-    # if len(argv) == 2:
-    #     fn = argv[1]
-    #     test_one(fn, True)
-    # elif len(argv) == 3:
-    #     fn = argv[1]
-    #     count = int(argv[2])
-    #     asyncio.run(test_multi(fn, count))
-    # else:
-    #     print('bad args')
+    from sys import argv, exit
+    if len(argv) != 2:
+        print(f'Usage: {argv[0]} path-to-wav')
+        exit(1)
+    print('\n# test-1: send wav file')
+    fn = argv[1]
+    test_one(fn, False)
+    print('\n# test-2: send url of audio')
+    test_one(fn, True)
+    print('\n# test-3: multi query')
+    count = 8
+    asyncio.run(test_multi(fn, count))
+    print('done')

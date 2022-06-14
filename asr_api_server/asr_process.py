@@ -1,11 +1,7 @@
-#encoding: utf8
+# encoding: utf8
 import asyncio
-import json
 import time
-import numpy as np
-import soundfile as sf
 import aiohttp
-from io import BytesIO
 from asr_api_server import vad_gpvad as vad
 from asr_api_server.logger import logger
 from asr_api_server.ws_query import ws_rec
@@ -37,25 +33,26 @@ async def rec(audio_origin):
     logger.info(f'vad time: {time.time()-b}, audio {duration=}')
     max_len = 0
     tasks = []
-    i = 0
+    segments_count = 0
     for s in segments:
-        i += 1
-        # print('\t==== segm:', i, type(s), s.shape)
+        segments_count += 1
         d = len(s) / samplerate
         if d > max_len:
             max_len = d
         t = asyncio.create_task(ws_rec(s.astype('int16').tobytes()))
         tasks.append(t)
-    texts = []
+    results = []
+    exception = 0
     for task in tasks:
-        text = await task
-        texts.append(text)
+        result = {'err': ''}
+        try:
+            result['text'] = await task
+        except Exception as e:
+            result['text'] = ''
+            result['err'] = str(e)
+            exception += 1
+        results.append(result)
     timing = time.time() - b
-    if not texts:
-        texts = ['no speech detected']
-    # else:
-    #     text = ','.join(texts)
-    # logger.info(f"rec text: {text}")
-    logger.info(f'[{len(audio_origin)}], duration[{duration}] seconds, time use:{timing}, segment {max_len=}, segments:{i}')
-    print(f'{len(texts) = }')
-    return ','.join(texts)
+    logger.info(f'REC: duration: [{duration}] seconds, time use:{timing}, max len of segment: {max_len}, segments_count: {segments_count}, {exception=}')
+    text = ''.join([r['text'] for r in results])
+    return text, exception
