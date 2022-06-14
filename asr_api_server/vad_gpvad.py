@@ -26,3 +26,6 @@ def vad(audio):
     duration = len(data) / samplerate
     segments = cut(timeline, data, samplerate)
     return segments, duration, samplerate
+
+if __name__ == "__main__":
+    vad(r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav')

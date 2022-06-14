@@ -228,7 +228,7 @@ class GPVAD:
             #feature = feature.to_mkldnn()
             prediction_tag, prediction_time = self.model(feature)
             prediction_tag = prediction_tag.to('cpu')
-            prediction_time = prediction_time.to('cpu')
+            predictlsion_time = prediction_time.to('cpu')
             if prediction_time is not None:  # Some models do not predict timestamps
                 thresholded_prediction = self.postprocessing_method(
                     prediction_time, *self.threshold)
@@ -243,7 +243,7 @@ class GPVAD:
 if __name__ == "__main__":
     from sys import argv
     import time
-    fn = argv[1]
+    fn = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
     pgvad = GPVAD()
     b = time.time()
     oo = pgvad.vad(fn)
@@ -251,12 +251,12 @@ if __name__ == "__main__":
     # b = time.time()
     # oo = pgvad.vad(fn)
     # print('time:', time.time() - b)
-    print(oo)
+    # print(oo)
     import soundfile as sf
     from io import BytesIO
     audio = open(fn, 'rb').read()
     data, samplerate = sf.read(BytesIO(audio), dtype='float32')
-    print('xxxxx', len(data), samplerate)
+    print('----------xxxxx', len(data), samplerate)
     npdata = data  #np.array(data, dtype='float32')
     print('======', data == npdata)
     tl = pgvad.vad_mem(npdata, samplerate)

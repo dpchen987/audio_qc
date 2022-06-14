@@ -742,13 +742,14 @@ def nsw_test_case(raw_text):
     print('O:' + NSWNormalizer(raw_text).normalize())
     print('')
 
+print('O:' + NSWNormalizer("12吧").normalize())
 
 def nsw_test():
     nsw_test_case('固话：0595-23865596或23880880。')
     nsw_test_case('固话：0595-23865596或23880880。')
     nsw_test_case('手机：+86 19859213959或15659451527。')
     nsw_test_case('分数：32477/76391。')
-    nsw_test_case('百分数：80.03%。')
+    nsw_test_case('百分数：80.0035%。')
     nsw_test_case('编号：31520181154418。')
     nsw_test_case('纯数：2983.07克或12345.60米。')
     nsw_test_case('日期：1999年2月20日或09年3月15号。')
@@ -759,7 +760,7 @@ def nsw_test():
     nsw_test_case('938')
     nsw_test_case('今天吃了115个小笼包231个馒头')
     nsw_test_case('有62％的概率')
-
+# nsw_test()
 
 FULL_WIDTH_ALPHA = {
     'ａ': 'a',
