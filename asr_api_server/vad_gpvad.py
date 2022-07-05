@@ -20,9 +20,9 @@ def cut(timeline, data, samplerate):
 
 
 def vad(audio):
-    timeline = VAD.vad(BytesIO(audio))
-    # print('timeline:', timeline)
-    data, samplerate = sf.read(BytesIO(audio), dtype='int16')
+    bio = BytesIO(audio)
+    timeline = VAD.vad(bio)
+    data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
     segments = cut(timeline, data, samplerate)
     return segments, duration, samplerate
