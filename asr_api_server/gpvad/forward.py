@@ -209,7 +209,7 @@ class GPVAD:
         print('---------------- librosa.load() time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
-        print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
+        print('--vad_mem() time ', time.time() - b, 'segments count:', len(ss))
         return ss
 
     def vad_mem(self, wav, sr):
@@ -226,7 +226,6 @@ class GPVAD:
                 labelled_predictions = decode_with_timestamps(
                     self.encoder, thresholded_prediction)
                 for label, start, end in labelled_predictions[0]:
-                    print(label, start*self.model_resolution, end*self.model_resolution)
                     if label != 'Speech': continue
                     output.append([start*self.model_resolution, end*self.model_resolution])
         return output
@@ -234,9 +233,8 @@ class GPVAD:
 
 if __name__ == "__main__":
     from sys import argv
-    import time
     fn = argv[1]
-    pgvad = GPVAD('sre')
+    pgvad = GPVAD('a2_v2')
     b = time.time()
     oo = pgvad.vad(fn)
     print('time:', time.time() - b, len(oo))
