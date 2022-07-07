@@ -2,6 +2,7 @@
 import asyncio
 import time
 import aiohttp
+import traceback
 from asr_api_server import vad_gpvad as vad
 from asr_api_server.logger import logger
 from asr_api_server.ws_query import ws_rec
@@ -48,6 +49,7 @@ async def rec(audio_origin):
         try:
             result['text'] = await task
         except Exception as e:
+            traceback.print_exc()
             result['text'] = ''
             result['err'] = str(e)
             exception += 1
