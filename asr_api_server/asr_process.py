@@ -1,4 +1,5 @@
 # encoding: utf8
+import re
 import asyncio
 import time
 import aiohttp
@@ -56,5 +57,6 @@ async def rec(audio_origin):
         results.append(result)
     timing = time.time() - b
     logger.info(f'REC: duration: [{duration}] seconds, time use:{timing}, max len of segment: {max_len}, segments_count: {segments_count}, {exception=}')
-    text = ''.join([r['text'] for r in results])
+    text = ','.join([r['text'] for r in results])
+    text = re.sub(r'<.*?>', '', text)
     return text, exception
