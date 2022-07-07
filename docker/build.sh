@@ -16,9 +16,6 @@ else
     cd docker
 fi
 
-# copy all needs to current dir
-cp ../requirements.txt .
-
 # download pip package to 'pip-pkg' if they are not there
 if [ -e pip-pkg ]; then
     echo 'has pip-pkg'
