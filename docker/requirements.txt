@@ -1,0 +1,13 @@
+aiohttp==3.8.1
+numpy==1.21.6
+python-multipart==0.0.5
+pydantic==1.8.2
+fastapi==0.75.2
+starlette==0.17.1
+uvicorn==0.16.0
+websockets==10.1
+SoundFile==0.10.3.post1
+scikit_learn==0.23.1
+soxr==0.2.7
+librosa==0.8.1
+onnxruntime
