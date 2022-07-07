@@ -1,8 +1,8 @@
 #!/bin/bash
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
-GLOG_logtostderr=${GLOG_logtostderr:=1}
-GLOG_v=${GLOG_v:=2}
+export GLOG_logtostderr=${GLOG_logtostderr:=1}
+export GLOG_v=${GLOG_v:=2}
 SDC_WS_PORT=${SDC_WS_PORT:=8301}
 SDC_WS_CHUNK_SIZE=${SDC_WS_CHUNK_SIZE:=-1}
 SDC_WS_CONTEXT_SCORE=${SDC_WS_CONTEXT_SCORE:=8}
