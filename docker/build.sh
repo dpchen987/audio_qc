@@ -29,7 +29,7 @@ docker build --build-arg version=$version -t asr_api_server:$version .
 
 
 # save docker image, give it to IT guys for deploying
-# docker save -o image-asr_api_server-$version-`date "+%Y-%m-%d_%H:%M:%S"`.tar asr_api_server:$version
+# docker save -o image-asr_api_server-$version-`date "+%Y-%m-%d_%H-%M-%S"`.tar asr_api_server:$version
 
 # # clear
 # rm asr_api_server-$version-cp38-cp38-linux_x86_64.whl
