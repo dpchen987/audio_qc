@@ -11,7 +11,7 @@ def parse_log(logfile, save_to):
     with open(logfile) as f:
         lines = f.readlines()
     trans = []
-    rtf = 0
+    rtf = '0'
     for line in lines:
         if 'RTF' in line:
             print(line)
