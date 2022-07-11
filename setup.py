@@ -31,8 +31,8 @@ def get_package_data():
     files += glob('asr_api_server/static/css/*.css')
     files += glob('asr_api_server/static/fonts/*')
     files += glob('asr_api_server/templates/*.html')
-    files += glob('asr_api_server/gpvad/labelencoders/*.pth')
-    files += glob('asr_api_server/gpvad/pretrained_models/*/*.pth')
+    files += glob('asr_api_server/gpvad_onnx/labelencoders/vad.pkl')
+    files += glob('asr_api_server/gpvad_onnx/onnx_models/*.onnx')
     new = []
     for f in files:
         p = f.find('/')
@@ -65,7 +65,7 @@ class build_py(build_py_orig):
             package_dir = self.get_package_dir(package)
             modules = self.find_package_modules(package, package_dir)
             # Now loop over the modules we found, "building" each one (just
-                    # copy it to self.build_lib).
+            # copy it to self.build_lib).
             for (package_, module, module_file) in modules:
                 assert package == package_
                 self.build_module(module, module_file, package)
@@ -76,7 +76,7 @@ def main(use_cython=False):
     # 暂时不编译data_model,  需把该模块加到setup()的packages里面
     extensions = [
         Extension(f'{pkg_name}/*.so', [f"{pkg_name}/*.py"]),
-        Extension(f'{pkg_name}/gpvad/*.so', [f"{pkg_name}/gpvad/*.py"]),
+        Extension(f'{pkg_name}/gpvad_onnx/*.so', [f"{pkg_name}/gpvad_onnx/*.py"]),
     ]
     if use_cython:
         ext_modules = cythonize(

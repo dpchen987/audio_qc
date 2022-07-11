@@ -1,6 +1,6 @@
 from io import BytesIO
 import soundfile as sf
-from asr_api_server.gpvad.forward import GPVAD
+from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
 from asr_api_server.logger import logger
 
 
@@ -20,9 +20,18 @@ def cut(timeline, data, samplerate):
 
 
 def vad(audio):
-    timeline = VAD.vad(BytesIO(audio))
-    # print('timeline:', timeline)
-    data, samplerate = sf.read(BytesIO(audio), dtype='int16')
+    bio = BytesIO(audio)
+    timeline = VAD.vad(bio)
+    bio.seek(0)
+    data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
     segments = cut(timeline, data, samplerate)
     return segments, duration, samplerate
+
+
+if __name__ == '__main__':
+    import sys
+    fp = sys.argv[1]
+    data = open(fp, 'rb').read()
+    s, d, sr = vad(data)
+    print(s, d, sr)

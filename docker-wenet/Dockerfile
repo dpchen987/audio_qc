@@ -1,8 +1,7 @@
 FROM ubuntu:latest
 
 WORKDIR /wenet
-COPY wenet-bin/* ./
 COPY models ./models
-COPY start-wenet.sh ./
+COPY *.so* websocket_server_main start-wenet.sh ./
 
 CMD ["./start-wenet.sh"]

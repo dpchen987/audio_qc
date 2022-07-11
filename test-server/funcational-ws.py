@@ -3,8 +3,9 @@
 
 
 import time
-import sys
 import asyncio
+import sys
+sys.path.append('../')
 
 from asr_api_server.ws_query import ws_rec
 

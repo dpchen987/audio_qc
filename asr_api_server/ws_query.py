@@ -1,4 +1,5 @@
 
+import asyncio
 import json
 import websockets
 from asr_api_server import config
@@ -17,9 +18,8 @@ WS_END = json.dumps({
 
 async def ws_rec(data):
     ws = config.get_ws()
-    logger.info(f'connect to {ws}')
     texts = []
-    conn = await websockets.connect(ws)
+    conn = await websockets.connect(ws, ping_timeout=200)
     # async with websockets.connect(ws) as conn:
     # step 1: send start
     await conn.send(WS_START)
@@ -46,6 +46,6 @@ async def ws_rec(data):
         await conn.close()
     except Exception as e:
         # this except has no effect
-        logger.info(e)
+        logger.error(e)
     return ''.join(texts)
 

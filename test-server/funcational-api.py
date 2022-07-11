@@ -29,6 +29,7 @@ def test_one(audio_file, url=False):
         e = time.time()
     print(r.text)
     print('time cost:', e-b)
+    return r.text
 
 
 async def test_coro(i, audio_data):

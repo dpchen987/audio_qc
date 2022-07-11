@@ -1,5 +1,4 @@
 aiohttp==3.8.1
-Cython==3.0.0a10
 numpy==1.21.6
 python-multipart==0.0.5
 pydantic==1.8.2
@@ -11,5 +10,4 @@ SoundFile==0.10.3.post1
 scikit_learn==0.23.1
 soxr==0.2.7
 librosa==0.8.1
-typing_extensions==4.2.0
 onnxruntime

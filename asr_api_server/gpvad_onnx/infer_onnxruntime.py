@@ -1,14 +1,11 @@
 import time
 import os
-import torch
 import numpy as np
 import librosa
 import soundfile as sf
 import sklearn.preprocessing as pre
-try:
-    from .models import crnn
-except:
-    from models import crnn
+import pickle
+import onnxruntime
 
 
 SAMPLE_RATE = 22050
@@ -189,16 +186,14 @@ class GPVAD:
         assert model_name in ['sre', 'a2_v2']
         root_dir = os.path.dirname(os.path.abspath(__file__))
         if model_name == 'sre':
-            model_path = os.path.join(root_dir, 'pretrained_models/sre/model.pth')
+            model_path = os.path.join(root_dir, 'onnx_models/sre.onnx')
         else:
-            model_path = os.path.join(root_dir, 'pretrained_models/audio2_vox2/model.pth')
-        self.model = crnn(
-            outputdim=2,
-            pretrained_from=model_path
-        ).eval()
+            model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2.onnx')
+        self.model = onnxruntime.InferenceSession(model_path)
         self.model_resolution = 20  # miliseconds
-        encoder_path = os.path.join(root_dir, 'labelencoders/vad.pth')
-        self.encoder = torch.load(encoder_path)
+        encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
+        with open(encoder_path, 'rb') as f:
+            self.encoder = pickle.load(f)
         self.threshold = (0.3, 0.05)  # 更好的recall，论文推荐(0.5, 0.1)
         self.speech_label_idx = np.where('Speech' == self.encoder.classes_)[0].squeeze()
         self.postprocessing_method = double_threshold
@@ -209,7 +204,7 @@ class GPVAD:
         print('---------------- librosa.load() time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
-        print('--vad_mem() time ', time.time() - b, 'segments count:', len(ss))
+        print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
         return ss
 
     def vad_mem(self, wav, sr):
@@ -217,28 +212,30 @@ class GPVAD:
         feature = np.expand_dims(feature, axis=0)
         print(f'{feature.shape = }')
         output = []
-        with torch.no_grad():
-            feature = torch.as_tensor(feature)
-            prediction_tag, prediction_time = self.model(feature)
-            if prediction_time is not None:  # Some models do not predict timestamps
-                thresholded_prediction = self.postprocessing_method(
-                    prediction_time, *self.threshold)
-                labelled_predictions = decode_with_timestamps(
-                    self.encoder, thresholded_prediction)
-                for label, start, end in labelled_predictions[0]:
-                    if label != 'Speech': continue
-                    output.append([start*self.model_resolution, end*self.model_resolution])
+        zz = self.model.run(None, {'modelInput': feature})
+        print(zz[0])
+        prediction_tag, prediction_time = zz
+        if prediction_time is not None:  # Some models do not predict timestamps
+            thresholded_prediction = self.postprocessing_method(
+                prediction_time, *self.threshold)
+            labelled_predictions = decode_with_timestamps(
+                self.encoder, thresholded_prediction)
+            for label, start, end in labelled_predictions[0]:
+                # print(label, start*self.model_resolution, end*self.model_resolution)
+                if label != 'Speech': continue
+                output.append([start*self.model_resolution, end*self.model_resolution])
         return output
 
 
 if __name__ == "__main__":
     from sys import argv
+    import time
     fn = argv[1]
     pgvad = GPVAD('a2_v2')
     b = time.time()
     oo = pgvad.vad(fn)
     print('time:', time.time() - b, len(oo))
-    with open('z-vad-ts.txt', 'w') as f:
+    with open('z-vad-ts-onnx.txt', 'w') as f:
         ll = [f'{o[0]}\t{o[1]}\n' for o in oo]
         f.write(''.join(ll))
     # b = time.time()

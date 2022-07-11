@@ -128,7 +128,7 @@
           success: function(data) {
             console.log(data);
             $('#rec_status').text('识别成功');
-            $('#resultPanel').text(data.result);
+            $('#resultPanel').text(data.text);
           },
           error: function(s, status, err) {
             console.error('服务器响应错误：', s);

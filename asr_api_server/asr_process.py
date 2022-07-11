@@ -1,7 +1,9 @@
 # encoding: utf8
+import re
 import asyncio
 import time
 import aiohttp
+import traceback
 from asr_api_server import vad_gpvad as vad
 from asr_api_server.logger import logger
 from asr_api_server.ws_query import ws_rec
@@ -48,11 +50,13 @@ async def rec(audio_origin):
         try:
             result['text'] = await task
         except Exception as e:
+            traceback.print_exc()
             result['text'] = ''
             result['err'] = str(e)
             exception += 1
         results.append(result)
     timing = time.time() - b
     logger.info(f'REC: duration: [{duration}] seconds, time use:{timing}, max len of segment: {max_len}, segments_count: {segments_count}, {exception=}')
-    text = ''.join([r['text'] for r in results])
+    text = ','.join([r['text'] for r in results])
+    text = re.sub(r'<.*?>', '', text)
     return text, exception
