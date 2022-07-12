@@ -88,4 +88,4 @@ async def rec_vad(audio_origin):
 
 
 async def rec(audio_origin):
-    return rec_no_vad(audio_origin)
+    return await rec_no_vad(audio_origin)
