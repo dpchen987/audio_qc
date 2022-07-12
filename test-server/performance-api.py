@@ -25,7 +25,7 @@ async def main(wav_scp_file, trans_text_file, concurrence):
     asr_trans = f'{wav_scp_file}-asr.txt'
     results = {}  # {uttid: text,}
     bad = 0
-    if os.path.exists(asr_trans):
+    if False and os.path.exists(asr_trans):
         with open(asr_trans) as f:
             for l in f:
                 zz = l.strip().split('\t')
@@ -88,8 +88,7 @@ async def main(wav_scp_file, trans_text_file, concurrence):
         f_result.flush()
     f_result.close()
     e = time.time()
-    print(f'{total_duration=}')
-    print('time cost:', e-b)
+    print(f'{total_duration=}, {failed = }, time cost: {e-b}')
     # caculate CER
     cmd = (f'python ../test-model/compute-wer.py --char=1 --v=1 '
            f'{trans_text_file} {asr_trans} > {__file__}-test-{concurrence}.cer.txt')
