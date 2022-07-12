@@ -33,14 +33,12 @@ async def ws_rec(data):
     while 1:
         i += 1
         ret = await conn.recv()
-        # print('ws recv loop', i, ret)
         ret = json.loads(ret)
         if ret['type'] == 'final_result':
             nbest = json.loads(ret['nbest'])
             text = nbest[0]['sentence']
             texts.append(text)
         elif ret['type'] == 'speech_end':
-            # print('=======', ret)
             break
     try:
         await conn.close()

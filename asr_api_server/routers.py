@@ -32,7 +32,6 @@ async def recognize_file(
     if not auth(query.appkey):
         return ASRResponse(**error)
     audio = await afile.read()
-    print('recv audio data:', len(audio))
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
@@ -58,16 +57,13 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if not auth(query.appkey):
         return ASRResponse(**error)
     if query.audio_url:
-        print('==== download', query.audio_url)
         audio, msg = await asr_process.download(query.audio_url)
         if msg != 'ok':
             error['status'] = 4003
             error['message'] = msg
             return ASRResponse(**error)
     else:
-        print('==== get from octet-stream')
         audio = await request.body()
-        print('recv audio data:', len(audio))
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
@@ -83,5 +79,4 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if exception:
         response['status'] = 4004
         response['message'] = f'{exception} times of getting exception'
-    print(response)
     return ASRResponse(**response)

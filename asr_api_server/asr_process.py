@@ -18,7 +18,6 @@ async def download(url):
             async with session.get(url, timeout=2) as resp:
                 if resp.status == 200:
                     data = await resp.read()
-                    print('download data:', len(data))
                     msg = 'ok'
                 else:
                     data = b''

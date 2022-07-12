@@ -23,7 +23,6 @@ def parse_env():
     if ws:
         ws = re.split(r'[,\s]+', ws)
         for w in ws:
-            print(f'{w=}')
             if not re.search(r':\d+', w):
                 raise ValueError(f'invalid WS address {w}')
         CONF['ws'] = ws
