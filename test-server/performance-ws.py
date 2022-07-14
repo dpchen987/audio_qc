@@ -5,7 +5,6 @@ import os
 import json
 import time
 import asyncio
-import aiohttp
 import sys
 
 sys.path.append('../')
@@ -57,7 +56,7 @@ async def main(wav_scp_file, trans_text_file, concurrence):
         # print('waiting tasks...', len(tasks), i, time.strftime('%m-%d %H:%M:%S'))
         for uttid, task in tasks:
             text = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
+            texts.append(f'{uttid}\t{text}\n')
         f_result.write(''.join(texts))
         f_result.flush()
         tasks = []
@@ -66,7 +65,7 @@ async def main(wav_scp_file, trans_text_file, concurrence):
         texts = []
         for uttid, task in tasks:
             text = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
+            texts.append(f'{uttid}\t{text}\n')
         f_result.write(''.join(texts))
         f_result.flush()
     f_result.close()
