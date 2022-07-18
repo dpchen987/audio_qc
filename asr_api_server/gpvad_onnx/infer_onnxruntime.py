@@ -189,7 +189,11 @@ class GPVAD:
             model_path = os.path.join(root_dir, 'onnx_models/sre.onnx')
         else:
             model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2.onnx')
-        self.model = onnxruntime.InferenceSession(model_path)
+        if onnxruntime.get_device() == 'GPU':
+            providers = ["CUDAExecutionProvider"]
+        else:
+            providers = None
+        self.model = onnxruntime.InferenceSession(model_path, providers=providers)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
         with open(encoder_path, 'rb') as f:
