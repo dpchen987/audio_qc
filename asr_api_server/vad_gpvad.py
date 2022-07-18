@@ -4,7 +4,7 @@ from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
 from asr_api_server.logger import logger
 
 
-VAD = GPVAD()
+VAD = GPVAD('sre')
 
 
 def cut(timeline, data, samplerate):
