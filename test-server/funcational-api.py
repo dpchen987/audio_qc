@@ -71,10 +71,11 @@ if __name__ == '__main__':
         exit(1)
     print('\n# test-1: send wav file')
     fn = argv[1]
-    test_one(fn, False)
-    print('\n# test-2: send url of audio')
-    test_one(fn, True)
-    print('\n# test-3: multi query')
-    count = 8
-    asyncio.run(test_multi(fn, count))
-    print('done')
+    for _ in range(20):
+        test_one(fn, False)
+    # print('\n# test-2: send url of audio')
+    # test_one(fn, True)
+    # print('\n# test-3: multi query')
+    # count = 8
+    # asyncio.run(test_multi(fn, count))
+    # print('done')
