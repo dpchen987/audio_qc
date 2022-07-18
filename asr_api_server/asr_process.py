@@ -12,7 +12,7 @@ from asr_api_server.ws_query import ws_rec
 
 
 async def download(url):
-    logger.info(f'download audio:{url}')
+    b = time.time()
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, timeout=2) as resp:
@@ -25,6 +25,8 @@ async def download(url):
     except Exception as e:
         data = b''
         msg = 'download audio url failed with exception: {}'.format(e)
+    time_cost = time.time() - b
+    logger.debug(f'{time_cost = } for downloading :{url}')
     return data, msg
 
 
@@ -87,4 +89,4 @@ async def rec_vad(audio_origin):
 
 
 async def rec(audio_origin):
-    return await rec_no_vad(audio_origin)
+    return await rec_vad(audio_origin)
