@@ -43,7 +43,7 @@ async def ws_rec(data):
     try:
         await conn.close()
     except Exception as e:
-        # this except has no effect
-        logger.error(e)
+        # this except has no effect, just log as debug
+        logger.debug(e)
     return ''.join(texts)
 
