@@ -8,6 +8,7 @@ VAD = GPVAD('sre')
 
 
 def cut(timeline, data, samplerate):
+    segments = []
     for tl in timeline:
         if tl[1] - tl[0] < 500:
             logger.info(f'too short audio segment {tl[1]-tl[0]}')
@@ -16,7 +17,8 @@ def cut(timeline, data, samplerate):
         end = int(tl[1] / 1000 * samplerate)
         segment = data[start: end]
         # logger.info(f'segment: {start, end}')
-        yield segment
+        segments.append(segment.tobytes())
+    return segments
 
 
 def vad(audio):
