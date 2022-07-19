@@ -1,12 +1,24 @@
 # encoding: utf8
 import re
+import os
 import asyncio
 import time
 import aiohttp
+import requests
 import traceback
 from io import BytesIO
 import soundfile as sf
-from asr_api_server import vad_gpvad as vad
+from concurrent.futures import ProcessPoolExecutor
+if os.environ.get('VAD_WEBRTC'):
+    from asr_api_server.vad_webrtc import vad
+    print('==='*20)
+    print('Using VAD_WEBRTC ...')
+    print('==='*20)
+else:
+    from asr_api_server.vad_gpvad import vad
+    print('==='*20)
+    print('Using VAD_GPVAD ...')
+    print('==='*20)
 from asr_api_server.logger import logger
 from asr_api_server.ws_query import ws_rec
 
@@ -15,14 +27,15 @@ async def download(url):
     b = time.time()
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=2) as resp:
+            async with session.get(url, timeout=8) as resp:
                 if resp.status == 200:
                     data = await resp.read()
                     msg = 'ok'
                 else:
                     data = b''
-                    msg = 'download audio url failed with status: {}'.format(resp.status)
+                    msg = f'download {url} failed with status: {resp.status}'
     except Exception as e:
+        logger.error(e)
         data = b''
         msg = 'download audio url failed with exception: {}'.format(e)
     time_cost = time.time() - b
@@ -32,8 +45,6 @@ async def download(url):
 
 async def rec_no_vad(audio_origin):
     b = time.time()
-    # with open('z-origin.wav', 'wb') as f:
-    #     f.write(audio_origin)
     bio = BytesIO(audio_origin)
     data, samplerate = sf.read(bio, dtype='int16')
     try:
@@ -52,19 +63,15 @@ async def rec_no_vad(audio_origin):
 
 async def rec_vad(audio_origin):
     b = time.time()
-    # with open('z-origin.wav', 'wb') as f:
-    #     f.write(audio_origin)
-    segments, duration, samplerate = vad.vad(audio_origin)
-    logger.info(f'vad time: {time.time()-b}, audio {duration=}')
+    segments, duration, samplerate = vad(audio_origin)
+    logger.info(f'vad time: {time.time()-b}, {duration=}, {len(segments) = }')
     max_len = 0
     tasks = []
-    segments_count = 0
     for s in segments:
-        segments_count += 1
         d = len(s) / samplerate
         if d > max_len:
             max_len = d
-        t = asyncio.create_task(ws_rec(s.astype('int16').tobytes()))
+        t = asyncio.create_task(ws_rec(s))
         tasks.append(t)
     results = []
     exception = 0
@@ -81,10 +88,11 @@ async def rec_vad(audio_origin):
     timing = time.time() - b
     msg = (f'REC: duration: [{duration}] seconds, '
            f'time use:{timing}, max len of segment: {max_len}, '
-           f'segments_count: {segments_count}, {exception=}')
+           f'segments_count: {len(segments)}, {exception=}')
     logger.info(msg)
     text = ','.join([r['text'] for r in results])
     text = re.sub(r'<.*?>', '', text)
+    logger.info(text)
     return text, exception
 
 
