@@ -1,4 +1,6 @@
 # encoding: utf8
+import os
+import asyncio
 from fastapi import APIRouter
 from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
@@ -12,6 +14,11 @@ def auth(appkey):
 
 
 router = APIRouter()
+COUNTER = 0
+COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
+print('==='*10)
+print(f'Max concurrency supported by this machine is {COUNTER_MAX}')
+print('==='*10)
 
 
 @router.get('/status')
@@ -31,16 +38,23 @@ async def recognize_file(
     }
     if not auth(query.appkey):
         return ASRResponse(**error)
+    global COUNTER
+    while COUNTER > COUNTER_MAX:
+        print(f'waiting in queque, cocurrency: {COUNTER}')
+        await asyncio.sleep(1)
+    COUNTER += 1
     audio = await afile.read()
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
+        COUNTER -= 1
         return ASRResponse(**error)
     result = await asr_process.rec(audio)
     response = {
         'taskid': '123',
         'result': result,
     }
+    COUNTER -= 1
     return ASRResponse(**response)
 
 
@@ -56,17 +70,24 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     }
     if not auth(query.appkey):
         return ASRResponse(**error)
+    global COUNTER
+    while COUNTER > COUNTER_MAX:
+        print(f'waiting in queque, cocurrency: {COUNTER}')
+        await asyncio.sleep(1)
+    COUNTER += 1
     if query.audio_url:
         audio, msg = await asr_process.download(query.audio_url)
         if msg != 'ok':
             error['status'] = 4003
             error['message'] = msg
+            COUNTER -= 1
             return ASRResponse(**error)
     else:
         audio = await request.body()
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
+        COUNTER -= 1
         return ASRResponse(**error)
     text, exception = await asr_process.rec(audio)
     response = {
@@ -79,4 +100,5 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if exception:
         response['status'] = 4004
         response['message'] = f'{exception} times of getting exception'
+    COUNTER -= 1
     return ASRResponse(**response)
