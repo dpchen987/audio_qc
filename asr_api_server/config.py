@@ -26,6 +26,9 @@ def parse_env():
             if not re.search(r':\d+', w):
                 raise ValueError(f'invalid WS address {w}')
         CONF['ws'] = ws
+        print('***'*10)
+        print('websocket_server:', CONF['ws'])
+        print('***'*10)
 
 
 parse_env()
@@ -36,6 +39,6 @@ def get_ws():
     global WS_INDEX
     if len(CONF['ws']) == 1:
         return CONF['ws'][0]
-    idx = WS_INDEX / len(CONF['ws'])
+    idx = WS_INDEX % len(CONF['ws'])
     WS_INDEX = idx + 1
     return CONF['ws'][idx]
