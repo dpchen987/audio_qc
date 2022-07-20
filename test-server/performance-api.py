@@ -1,111 +1,122 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding:utf-8
 
 import os
 import json
 import time
 import asyncio
+import argparse
 import aiohttp
+import statistics
 
-api = 'http://127.0.0.1:8300/asr/v1/rec'
 
-
-async def test_coro(audio_data):
+async def test_coro(audio_data, api):
     headers = {
         'appkey': '123',
         'format': 'pcm',
     }
+    begin = time.time()
     async with aiohttp.ClientSession() as session:
         async with session.post(api, data=audio_data, headers=headers) as resp:
             text = await resp.text()
-    return text
+    time_cost = time.time() - begin
+    return {
+        'text': text,
+        'time': time_cost,
+    }
 
 
-async def main(wav_scp_file, trans_text_file, concurrence):
-    asr_trans = f'{wav_scp_file}-asr.txt'
-    results = {}  # {uttid: text,}
-    bad = 0
-    if False and os.path.exists(asr_trans):
-        with open(asr_trans) as f:
-            for l in f:
-                zz = l.strip().split('\t')
-                if len(zz) != 2:
-                    # print('bad', l)
-                    bad += 1
-                    continue
-                results[zz[0]] = zz[1]
-    print(f'{len(results)=}, {bad=}')
+def get_args():
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument(
+        '-u', '--api_uri', required=True,
+        help="asr_api_server's uri, e.g. http://127.0.0.1:8300/asr/v1/rec")
+    parser.add_argument(
+        '-w', '--wav_scp', required=True,
+        help='path to wav_scp_file')
+    parser.add_argument(
+        '-t', '--trans', required=True,
+        help='path to trans_text_file of wavs')
+    parser.add_argument(
+        '-s', '--save_to', required=True,
+        help='path to save transcription')
+    parser.add_argument(
+        '-n', '--num_concurrence', type=int, required=True,
+        help='num of concurrence for query')
+    args = parser.parse_args()
+    return args
 
+
+def print_result(info):
+    length = max([len(k) for k in info])
+    for k, v in info.items():
+        print(f'\t{k: >{length}} : {v}')
+
+
+async def main(args):
     wav_scp = []
     total_duration = 0
-    with open(wav_scp_file) as f:
-        for l in f:
-            zz = l.strip().split('\t')
-            if zz[0] in results:
-                continue
+    with open(args.wav_scp) as f:
+        for line in f:
+            zz = line.strip().split()
+            assert len(zz) == 2
             with open(zz[1], 'rb') as f:
                 data = f.read()
             duration = (len(data) - 44)/2/16000
             total_duration += duration
             wav_scp.append((zz[0], data))
-    print(f'{len(wav_scp)=}, {total_duration= }')
+    print(f'{len(wav_scp) = }, {total_duration = }')
 
-    f_result = open(asr_trans, 'w')
-    for uttid, text in results.items():
-        f_result.write(f'{uttid}\t{text}\n')
-    f_result.flush()
     tasks = []
     failed = 0
-    b = time.time()
-    for _uttid, data in wav_scp:
-        if len(tasks) < concurrence:
-            t = asyncio.create_task(test_coro(data))
-            tasks.append((_uttid, t))
+    texts = []
+    request_times = []
+    begin = time.time()
+    for i, (_uttid, data) in enumerate(wav_scp):
+        task = asyncio.create_task(test_coro(data, args.api_uri))
+        tasks.append((_uttid, task))
+        if len(tasks) < args.num_concurrence:
             continue
-        texts = []
-        # print('waiting tasks...', len(tasks), i, time.strftime('%m-%d %H:%M:%S'))
+        print((f'{i=}, start {args.num_concurrence} '
+               f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
         for uttid, task in tasks:
-            text = await task
-            result = json.loads(text)
-            if result['status'] != 2000:
-                print('failed', uttid, result['message'])
-                failed += 1
+            result = await task
             texts.append(f'{uttid}\t{result["text"]}\n')
-        f_result.write(''.join(texts))
-        f_result.flush()
+            request_times.append(result['time'])
         tasks = []
+        print(f'\tdone @ {time.strftime("%m-%d %H:%M:%S")}')
     if tasks:
-        # print('waiting tasks...', i)
-        texts = []
         for uttid, task in tasks:
-            text = await task
-            result = json.loads(text)
-            if result['status'] != 2000:
-                print('failed', uttid, result['message'])
-                failed += 1
+            result = await task
             texts.append(f'{uttid}\t{result["text"]}\n')
-        f_result.write(''.join(texts))
-        f_result.flush()
-    f_result.close()
-    e = time.time()
-    print(f'{total_duration=}, {failed = }, time cost: {e-b}')
+            request_times.append(result['time'])
+    request_time = time.time() - begin
+    rtf = request_time / total_duration
+    print('For all concurrence:')
+    print_result({
+        'failed': failed,
+        'total_duration': total_duration,
+        'request_time': request_time,
+        'RTF': rtf,
+    })
+    print('For one request:')
+    print_result({
+        'mean': statistics.mean(request_times),
+        'median': statistics.median(request_times),
+        'max_time': max(request_times),
+        'min_time': min(request_times),
+    })
+    with open(args.save_to, 'w', encoding='utf8') as fsave:
+        fsave.write(''.join(texts))
     # caculate CER
-    cmd = (f'python ../test-model/compute-wer.py --char=1 --v=1 '
-           f'{trans_text_file} {asr_trans} > {__file__}-test-{concurrence}.cer.txt')
+    cmd = (f'python ../compute-wer.py --char=1 --v=1 '
+           f'{args.trans} {args.save_to} > '
+           f'{args.save_to}-test-{args.num_concurrence}.cer.txt')
     print(cmd)
     os.system(cmd)
     print('done')
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('-w', '--wav_scp', required=True, help='wav_scp_file')
-    parser.add_argument('-t', '--trans', required=True, help='transcription file')
-    parser.add_argument('-n', '--num_concurrence', type=int, default=1, help='num of concurrence for query')
-    args = parser.parse_args()
-    print('\n# test-1: single query')
-    # asyncio.run(main(wav_scp_file, trans_text_file, concurrence=1))
-
-    print('\n# test-2: multiple concurrence')
-    asyncio.run(main(args.wav_scp, args.trans, concurrence=args.num_concurrence))
+    args = get_args()
+    asyncio.run(main(args))
