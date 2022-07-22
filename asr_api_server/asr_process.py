@@ -4,11 +4,13 @@ import os
 import asyncio
 import time
 import aiohttp
-import requests
 import traceback
 from io import BytesIO
 import soundfile as sf
-from concurrent.futures import ProcessPoolExecutor
+from .logger import logger
+from .easytimer import Timer
+
+eztimer = Timer(logger)
 if os.environ.get('VAD_WEBRTC'):
     from asr_api_server.vad_webrtc import vad
     print('==='*20)
@@ -19,8 +21,17 @@ else:
     print('==='*20)
     print('Using VAD_GPVAD ...')
     print('==='*20)
-from asr_api_server.logger import logger
-from asr_api_server.ws_query import ws_rec
+model_dir = os.environ.get('ASR_LOCAL_MODEL')
+if model_dir:
+    asr_type = 'local'
+    from .recognize_onnx import AsrOnnx
+    print('==='*20)
+    print('Using LOCAL MODEL:', model_dir)
+    print('==='*20)
+    asronnx = AsrOnnx(model_dir)
+else:
+    asr_type = 'ws'
+    from asr_api_server.ws_query import ws_rec
 
 
 async def download(url):
@@ -61,6 +72,13 @@ async def rec_no_vad(audio_origin):
     return text, exception
 
 
+def rec_vad_batch(audio_origin):
+    eztimer.begin('vad')
+    segments, duration, samplerate = vad(audio_origin)
+    texts = asronnx.rec(segments)
+    return '，'.join(texts), 0
+
+
 async def rec_vad(audio_origin):
     b = time.time()
     segments, duration, samplerate = vad(audio_origin)
@@ -71,7 +89,7 @@ async def rec_vad(audio_origin):
         d = len(s) / samplerate
         if d > max_len:
             max_len = d
-        t = asyncio.create_task(ws_rec(s))
+        t = asyncio.create_task(ws_rec(s.tobytes()))
         tasks.append(t)
     results = []
     exception = 0
@@ -97,4 +115,6 @@ async def rec_vad(audio_origin):
 
 
 async def rec(audio_origin):
+    if asr_type == 'local':
+        return rec_vad_batch(audio_origin)
     return await rec_vad(audio_origin)
