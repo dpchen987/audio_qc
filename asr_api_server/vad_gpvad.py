@@ -17,7 +17,7 @@ def cut(timeline, data, samplerate):
         end = int(tl[1] / 1000 * samplerate)
         segment = data[start: end]
         # logger.info(f'segment: {start, end}')
-        segments.append(segment.tobytes())
+        segments.append(segment)
     return segments
 
 
