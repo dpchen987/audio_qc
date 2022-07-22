@@ -29,8 +29,9 @@ async def test_coro(audio_data, api):
 def get_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(
-        '-u', '--api_uri', required=True,
-        help="asr_api_server's uri, e.g. http://127.0.0.1:8300/asr/v1/rec")
+        '-u', '--api_uri',
+        default='http://127.0.0.1:8300/asr/v1/rec',
+        help="asr_api_server's uri, default: http://127.0.0.1:8300/asr/v1/rec")
     parser.add_argument(
         '-w', '--wav_scp', required=True,
         help='path to wav_scp_file')
