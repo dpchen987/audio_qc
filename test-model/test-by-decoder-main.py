@@ -60,7 +60,7 @@ def main(args):
     cmds = [
         f'{bin_dir}/decoder_main --chunk_size -1 ',
         f'--wav_scp {wav_scp}',
-        f'--dict_path {model_dir}/words.txt',
+        f'--unit_path {model_dir}/units.txt',
     ]
     if args.num_threads > 1:
         cmds.append(f'--num_threads {args.num_threads}')
