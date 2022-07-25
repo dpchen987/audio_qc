@@ -76,6 +76,7 @@ def rec_vad_batch(audio_origin):
     eztimer.begin('vad')
     segments, duration, samplerate = vad(audio_origin)
     texts = asronnx.rec(segments)
+    eztimer.end('vad')
     return '，'.join(texts), 0
 
 
