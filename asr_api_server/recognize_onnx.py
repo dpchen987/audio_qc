@@ -11,6 +11,7 @@ from swig_decoders import map_batch, \
 try:
     from .easytimer import Timer
     from .fbank import calcFbank
+    from .get_gpu_count import get_gpu_count
 except:
     from easytimer import Timer
     from fbank import calcFbank
@@ -42,8 +43,16 @@ class AsrOnnx:
         t.end('init_model')
 
     def init_model(self):
+        gpus = get_gpu_count()
+        print(f'========== Available GPU: {gpus} ==========')
+        self.pid = os.getpid()
+        self.ppid = os.getppid()
+        if gpus > 0:
+            self.args.gpu = (self.pid - self.ppid) % gpus
+        else:
+            self.args.gpu = -1
+        print(f'--- {self.ppid=}, {self.pid=} use GPU={self.args.gpu} ---')
         args = self.args
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
         with open(args.config, 'r') as fin:
             self.config = yaml.load(fin, Loader=yaml.FullLoader)
         self.reverse_weight = self.config["model_conf"].get("reverse_weight", 0.0)
@@ -52,10 +61,14 @@ class AsrOnnx:
         # Init asr model from configs
         use_cuda = args.gpu >= 0 and ort.get_device() == 'GPU'
         if use_cuda:
-            print('use_cuda...')
-            EP_list = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+            print('================ use_cuda...')
+            EP_list = [
+                    ('CUDAExecutionProvider', {'device_id': self.args.gpu}),
+                    'CPUExecutionProvider']
         else:
+            print('================ use_cpu...')
             EP_list = ['CPUExecutionProvider']
+        print(EP_list)
 
         self.encoder_ort = ort.InferenceSession(
                 args.encoder_onnx,
