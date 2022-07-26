@@ -177,8 +177,9 @@ def extract_feature_mem(wav, sr):
     b = time.time()
     mel = librosa.feature.melspectrogram(
         wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
+    feat = np.log(mel + EPS).T
     print('---------- mel feature time', time.time() - b)
-    return np.log(mel + EPS).T
+    return feat
 
 
 class GPVAD:
@@ -235,7 +236,7 @@ if __name__ == "__main__":
     from sys import argv
     import time
     fn = argv[1]
-    pgvad = GPVAD('a2_v2')
+    pgvad = GPVAD('sre')
     b = time.time()
     oo = pgvad.vad(fn)
     print('time:', time.time() - b, len(oo))
