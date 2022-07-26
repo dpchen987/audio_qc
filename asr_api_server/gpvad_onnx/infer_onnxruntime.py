@@ -192,7 +192,7 @@ class GPVAD:
         if onnxruntime.get_device() == 'GPU':
             providers = ["CUDAExecutionProvider"]
         else:
-            providers = None
+            providers = ['CPUExecutionProvider']
         self.model = onnxruntime.InferenceSession(model_path, providers=providers)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
@@ -204,7 +204,7 @@ class GPVAD:
 
     def vad(self, audio_path):
         b = time.time()
-        wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_vhq")
+        wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
         print('---------------- librosa.load() time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
