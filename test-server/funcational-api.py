@@ -66,12 +66,16 @@ async def test_multi(audio_file, count=16):
 
 if __name__ == '__main__':
     from sys import argv, exit
-    if len(argv) != 2:
-        print(f'Usage: {argv[0]} path-to-wav')
+    if len(argv) < 2:
+        print(f'Usage: {argv[0]} path-to-wav loops')
         exit(1)
     print('\n# test-1: send wav file')
     fn = argv[1]
-    for _ in range(20):
+    if len(argv) > 2:
+        loops = int(argv[2])
+    else:
+        loops = 1
+    for _ in range(loops):
         test_one(fn, False)
     # print('\n# test-2: send url of audio')
     # test_one(fn, True)
