@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
+# from: https://github.com/adam2go/mfcc
 
 
 import math
@@ -228,3 +229,58 @@ def calcFbank(signal, sample_rate=16000, win_length=0.025, win_step=0.01,
         feat = np.concatenate((feat, feat_delta, feat_delta_delta), axis=1)
 
     return feat
+
+
+def calcMFCC(signal, sample_rate=16000, win_length=0.025, win_step=0.01,
+             filters_num=26, NFFT=512, low_freq=0, high_freq=None, pre_emphasis_coeff=0.97,
+             cep_lifter=22, append_energy=True, append_delta=False):
+    """Calculate MFCC Features.
+    Arguments:
+        signal: 1-D numpy array.
+        sample_rate: Sampling rate. Defaulted to 16KHz.
+        win_length: Window length. Defaulted to 0.025, which is 25ms/frame.
+        win_step: Interval between the start points of adjacent frames.
+            Defaulted to 0.01, which is 10ms.
+        filters_num: Numbers of filters. Defaulted to 26.
+        NFFT: Size of FFT. Defaulted to 512.
+        low_freq: Lowest frequency.
+        high_freq: Highest frequency.
+        pre_emphasis_coeff: Coefficient for pre-emphasis. Pre-emphasis increase
+            the energy of signal at higher frequency. Defaulted to 0.97.
+        cep_lifter: Numbers of lifter for cepstral. Defaulted to 22.
+        append_energy: Whether to append energy. Defaulted to True.
+        append_delta: Whether to append delta to feature. Defaulted to False.
+    Returns:
+        2-D numpy array with shape (NUMFRAMES, features). Each frame containing filters_num of features.
+    """
+    from scipy.fftpack import dct
+    (feat, energy) = _fbank(signal, sample_rate, win_length, win_step, filters_num, NFFT,
+                           low_freq, high_freq, pre_emphasis_coeff)
+    feat = np.log(feat)
+    feat = dct(feat, type=2, axis=1, norm='ortho')
+    feat = _lifter(feat, cep_lifter)
+    if append_energy:
+        feat[:, 0] = np.log(energy)
+    if append_delta:
+        feat_delta = _delta(feat)
+        feat_delta_delta = _delta(feat_delta)
+        feat = np.concatenate((feat, feat_delta, feat_delta_delta), axis=1)
+
+    return feat
+
+
+if __name__ == '__main__':
+    from sys import argv
+    import soundfile as sf
+    import time
+    fn = argv[1]
+    data, sr = sf.read(fn, dtype='int16')
+    b = time.time()
+    fbank = calcFbank(data)
+    print(f'{time.time() - b}, {fbank.shape=}')
+    b = time.time()
+    mfcc = calcMFCC(data)
+    print(f'{time.time() - b}, {mfcc.shape=}')
+
+
+
