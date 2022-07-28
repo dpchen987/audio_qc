@@ -67,16 +67,27 @@ class AsrOnnx:
                     'CPUExecutionProvider']
         else:
             print('================ use_cpu...')
-            EP_list = ['CPUExecutionProvider']
+            eps = ort.get_available_providers()
+            if 'DnnlExecutionProvider' in eps:
+                EP_list = ['DnnlExecutionProvider']
+            elif 'OpenVINOExecutionProvider' in eps:
+                EP_list = ['OpenVINOExecutionProvider']
+            else:
+                EP_list = ['CPUExecutionProvider']
         print(EP_list)
 
+        so = ort.SessionOptions()
+        # so.enable_profiling = True
+        so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         self.encoder_ort = ort.InferenceSession(
                 args.encoder_onnx,
+                sess_options=so,
                 providers=EP_list)
         self.decoder_ort = None
         if args.mode == "attention_rescoring":
             self.decoder_ort = ort.InferenceSession(
                     args.decoder_onnx,
+                    sess_options=so,
                     providers=EP_list)
 
         # Load dict
