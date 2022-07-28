@@ -38,7 +38,7 @@ async def download(url):
     b = time.time()
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=8) as resp:
+            async with session.get(url, timeout=80) as resp:
                 if resp.status == 200:
                     data = await resp.read()
                     msg = 'ok'
