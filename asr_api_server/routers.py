@@ -43,6 +43,7 @@ async def recognize_file(
         print(f'waiting in queque, cocurrency: {COUNTER}')
         await asyncio.sleep(1)
     COUNTER += 1
+    logger.info(f'=== concurrency: {COUNTER} ===')
     audio = await afile.read()
     if not audio:
         error['status'] = 4002
@@ -71,9 +72,9 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if not auth(query.appkey):
         return ASRResponse(**error)
     global COUNTER
-    while COUNTER > COUNTER_MAX:
-        print(f'waiting in queque, cocurrency: {COUNTER}')
-        await asyncio.sleep(1)
+    # while COUNTER > COUNTER_MAX:
+    #     print(f'waiting in queque, cocurrency: {COUNTER}')
+    #     await asyncio.sleep(1)
     COUNTER += 1
     if query.audio_url:
         audio, msg = await asr_process.download(query.audio_url)
