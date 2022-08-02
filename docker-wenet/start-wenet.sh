@@ -18,4 +18,4 @@ model_dir=./models
     --context_score $SDC_WS_CONTEXT_SCORE \
     --context_path $model_dir/hotext.txt \
     --model_path $model_dir/final.zip \
-    --unit_path $model_dir/words.txt 2>&1 | tee server.log
+    --unit_path $model_dir/units.txt 2>&1 | tee server.log
