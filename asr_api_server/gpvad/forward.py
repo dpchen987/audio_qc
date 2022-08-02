@@ -220,6 +220,8 @@ class GPVAD:
         with torch.no_grad():
             feature = torch.as_tensor(feature)
             prediction_tag, prediction_time = self.model(feature)
+            print(type(prediction_tag))
+            print(type(prediction_time))
             if prediction_time is not None:  # Some models do not predict timestamps
                 thresholded_prediction = self.postprocessing_method(
                     prediction_time, *self.threshold)
