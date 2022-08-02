@@ -31,6 +31,7 @@ if model_dir:
     asronnx = AsrOnnx(model_dir)
 else:
     asr_type = 'ws'
+    print('=== No environ: ASR_LOCAL_MODEL, Using [ws] decoder ===')
     from asr_api_server.ws_query import ws_rec
 
 
