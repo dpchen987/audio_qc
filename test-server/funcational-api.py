@@ -7,7 +7,7 @@ import aiohttp
 
 
 api = 'http://127.0.0.1:8300/asr/v1/rec'
-pth = r'C:\Users\YJ-XXB-new1\Desktop\fig\7.wav'
+
 
 def test_one(audio_file, url=False):
     headers = {
@@ -28,8 +28,9 @@ def test_one(audio_file, url=False):
         r = requests.post(api, data=data, headers=headers)
         e = time.time()
     print(r.text)
+    time_cost = e - b
     print('time cost:', e-b)
-    return r.text
+    return time_cost
 
 
 async def test_coro(i, audio_data):
@@ -75,8 +76,10 @@ if __name__ == '__main__':
         loops = int(argv[2])
     else:
         loops = 1
+    total = 0
     for _ in range(loops):
-        test_one(fn, False)
+        total += test_one(fn, False)
+    print('Average time cost:', round(total/loops, 3))
     # print('\n# test-2: send url of audio')
     # test_one(fn, True)
     # print('\n# test-3: multi query')
