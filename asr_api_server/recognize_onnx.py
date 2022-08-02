@@ -25,19 +25,17 @@ class Namespace:
 
 
 class AsrOnnx:
-    def __init__(self, model_dir, fp16=True):
-        self.args = Namespace()
-        self.args.config = model_dir + 'train.yaml'
-        self.args.gpu = 0
-        self.args.dict = model_dir + 'words.txt'
-        self.args.fp16 = fp16
-        if fp16:
-            self.args.encoder_onnx = model_dir + 'encoder_fp16.onnx'
-            self.args.decoder_onnx = model_dir + 'decoder_fp16.onnx'
-        else:
-            self.args.encoder_onnx = model_dir + 'encoder.onnx'
-            self.args.decoder_onnx = model_dir + 'decoder.onnx'
-        self.args.mode = 'ctc_prefix_beam_search'
+    def __init__(self, model_dir, dtype='float32'):
+        assert dtype in ['float16', 'float32']
+        self.model_dir = model_dir
+        args = Namespace()
+        args.config = model_dir + 'train.yaml'
+        args.gpu = -1
+        args.dict = model_dir + 'words.txt'
+        args.dtype = dtype
+        # args.mode = 'attention_rescoring'
+        args.mode = 'ctc_prefix_beam_search'
+        self.args = args
         t = Timer()
         self.init_model()
         t.end('init_model')
@@ -51,7 +49,6 @@ class AsrOnnx:
             self.args.gpu = (self.pid - self.ppid) % gpus
         else:
             self.args.gpu = -1
-        print(f'--- {self.ppid=}, {self.pid=} use GPU={self.args.gpu} ---')
         args = self.args
         with open(args.config, 'r') as fin:
             self.config = yaml.load(fin, Loader=yaml.FullLoader)
@@ -62,9 +59,11 @@ class AsrOnnx:
         use_cuda = args.gpu >= 0 and ort.get_device() == 'GPU'
         if use_cuda:
             print('================ use_cuda...')
+            print(f'--- {self.ppid=}, {self.pid=} use GPU={self.args.gpu} ---')
             EP_list = [
                     ('CUDAExecutionProvider', {'device_id': self.args.gpu}),
                     'CPUExecutionProvider']
+            args.dtype = 'float16'
         else:
             print('================ use_cpu...')
             eps = ort.get_available_providers()
@@ -74,7 +73,17 @@ class AsrOnnx:
                 EP_list = ['OpenVINOExecutionProvider']
             else:
                 EP_list = ['CPUExecutionProvider']
+            args.dtype = 'float32'
         print(EP_list)
+        print(f'=== {args.dtype = } ===')
+        if args.dtype == 'float16':
+            encoder_onnx = 'encoder_fp16.onnx'
+            decoder_onnx = 'decoder_fp16.onnx'
+        else:
+            encoder_onnx = 'encoder.onnx'
+            decoder_onnx = 'decoder.onnx'
+        args.encoder_onnx = os.path.join(self.model_dir, encoder_onnx)
+        args.decoder_onnx = os.path.join(self.model_dir, decoder_onnx)
 
         so = ort.SessionOptions()
         # so.enable_profiling = True
@@ -141,8 +150,7 @@ class AsrOnnx:
         eos, sos = self.eos, self.sos
         args = self.args
         feats, feats_lengths = self.calc_feat(wavs)
-        if args.fp16:
-            feats = feats.astype(np.float16)
+        feats = feats.astype(args.dtype)
         ort_inputs = {
                 self.encoder_ort.get_inputs()[0].name: feats,
                 self.encoder_ort.get_inputs()[1].name: feats_lengths}
@@ -207,10 +215,7 @@ class AsrOnnx:
                     if len(hyp[1]) > max_len:
                         max_len = len(hyp[1])
                 ctc_score.append(cur_ctc_score)
-            if args.fp16:
-                ctc_score = np.array(ctc_score, dtype=np.float16)
-            else:
-                ctc_score = np.array(ctc_score, dtype=np.float32)
+            ctc_score = np.array(ctc_score, dtype=args.dtype)
             hyps_pad_sos_eos = np.ones(
                 (batch_size, beam_size, max_len + 2),
                 dtype=np.int64) * IGNORE_ID
