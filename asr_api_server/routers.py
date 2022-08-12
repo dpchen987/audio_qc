@@ -1,12 +1,12 @@
 # encoding: utf8
 import os
 import asyncio
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
-from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer
+from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse
 
 
 def auth(appkey):
@@ -103,3 +103,38 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
         response['message'] = f'{exception} times of getting exception'
     COUNTER -= 1
     return ASRResponse(**response)
+
+@router.post("/speech_rec", response_model=RecognizeResponse)
+async def speech_recognize(audio_info: AudioInfo = Body(..., title="音频信息")):
+    '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
+    '''
+    global COUNTER
+    # while COUNTER > COUNTER_MAX:
+    #     print(f'waiting in queque, cocurrency: {COUNTER}')
+    #     await asyncio.sleep(1)
+    try:
+        COUNTER += 1
+        response = {}
+        audio, msg = await asr_process.download(audio_info.file_path)
+        if msg != 'ok':
+            response['code'] = 4003
+            response['msg'] = msg
+            COUNTER -= 1
+            return response
+        if not audio:
+            response['code'] = 4002
+            response['msg'] = 'no audio data'
+            COUNTER -= 1
+            return response
+        text, exception = await asr_process.rec(audio)
+        if exception:
+            response['status'] = 4004
+            response['message'] = f'{exception} times of getting exception'
+        response['data'] = text
+        COUNTER -= 1
+    except Exception as e:
+        logger.exception(e)
+        response['code'] = 4000
+        response['msg'] = str(e)
+        COUNTER -= 1
+    return response
