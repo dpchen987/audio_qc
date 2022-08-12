@@ -165,15 +165,11 @@ def extract_feature(wavefilepath):
 def extract_feature_mem(wav, sr):
     if wav.ndim > 1:
         wav = wav.mean(-1)
-    print('---------', wav.shape, wav.dtype)
     if wav.dtype != 'float32':
-        print('\t-----> change to float32')
         wav = wav.astype('float32')
     if sr != SAMPLE_RATE:
         b = time.time()
         wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
-        print('---------- resample time', time.time() - b)
-    print('---------', wav.shape, wav.dtype)
     b = time.time()
     mel = librosa.feature.melspectrogram(
         wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
@@ -204,9 +200,7 @@ class GPVAD:
         self.postprocessing_method = double_threshold
 
     def vad(self, audio_path):
-        b = time.time()
         wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
-        print('---------------- librosa.load() time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
         print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
@@ -215,10 +209,8 @@ class GPVAD:
     def vad_mem(self, wav, sr):
         feature = extract_feature_mem(wav, sr)
         feature = np.expand_dims(feature, axis=0)
-        print(f'{feature.shape = }')
         output = []
         zz = self.model.run(None, {'modelInput': feature})
-        print(zz[0])
         prediction_tag, prediction_time = zz
         if prediction_time is not None:  # Some models do not predict timestamps
             thresholded_prediction = self.postprocessing_method(
