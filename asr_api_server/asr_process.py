@@ -32,7 +32,12 @@ if model_dir:
 else:
     asr_type = 'ws'
     print('=== No environ: ASR_LOCAL_MODEL, Using [ws] decoder ===')
-    from asr_api_server.ws_query import ws_rec
+    if os.environ.get('ASR_BATCH'):
+        asr_type = 'ws_batch'
+        print('\t=== Using [ws_batch] decoder ===')
+        from asr_api_server.ws_query_batch import ws_rec
+    else:
+        from asr_api_server.ws_query import ws_rec
 
 
 async def download(url):
@@ -73,15 +78,15 @@ async def rec_no_vad(audio_origin):
     return text, exception
 
 
-def rec_vad_batch(audio_origin):
+def rec_vad_local(audio_origin):
     eztimer.begin('vad')
     segments, duration, samplerate = vad(audio_origin)
-    texts = asronnx.rec(segments)
     eztimer.end('vad')
+    texts = asronnx.rec(segments)
     return '，'.join(texts), 0
 
 
-async def rec_vad(audio_origin):
+async def rec_vad_ws(audio_origin):
     b = time.time()
     segments, duration, samplerate = vad(audio_origin)
     logger.info(f'vad time: {time.time()-b}, {duration=}, {len(segments) = }')
@@ -116,7 +121,30 @@ async def rec_vad(audio_origin):
     return text, exception
 
 
+async def rec_vad_ws_batch(audio_origin):
+    eztimer.begin('vad')
+    segments, duration, samplerate = vad(audio_origin)
+    eztimer.end('vad')
+    data = [s.tobytes() for s in segments]
+    eztimer.begin('[batch recognize]')
+    try:
+        texts = await ws_rec(data)
+        if not texts:
+            exception = 1
+        else:
+            exception = 0
+    except:
+        traceback.print_exc()
+        texts = []
+        exception = 1
+    eztimer.end('[batch recognize]')
+    text = re.sub(r'<.*?>', '', '，'.join(texts))
+    return text, exception
+
+
 async def rec(audio_origin):
     if asr_type == 'local':
-        return rec_vad_batch(audio_origin)
-    return await rec_vad(audio_origin)
+        return rec_vad_local(audio_origin)
+    if asr_type == 'ws_batch':
+        return await rec_vad_ws_batch(audio_origin)
+    return await rec_vad_ws(audio_origin)
