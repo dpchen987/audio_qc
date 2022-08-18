@@ -33,8 +33,8 @@ class AsrOnnx:
         args.gpu = -1
         args.dict = model_dir + 'words.txt'
         args.dtype = dtype
-        # args.mode = 'attention_rescoring'
-        args.mode = 'ctc_prefix_beam_search'
+        args.mode = 'attention_rescoring'
+        # args.mode = 'ctc_prefix_beam_search'
         self.args = args
         t = Timer()
         self.init_model()
@@ -127,6 +127,7 @@ class AsrOnnx:
         t = Timer()
         feats = []
         feats_lengths = []
+        t.begin('Fbank')
         for wav in wavs:
             mat = calcFbank(
                     wav,
