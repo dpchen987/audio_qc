@@ -31,7 +31,6 @@ async def ws_rec(data):
     # step 2: send audio data
     await conn.send(b''.join(data))
     result = await conn.recv()
-    print(result)
     jn = json.loads(result)
     texts = []
     if jn['status'] != 'ok':
