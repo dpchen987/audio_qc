@@ -11,7 +11,7 @@ VAD = GPVAD('sre')
 def cut(timeline, data, samplerate):
     segments = []
     last_duration = 0
-    min_duration = 1000  # 1s
+    min_duration = 2000  # 1s
     max_duration = 10000  # 10s
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
