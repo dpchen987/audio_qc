@@ -28,7 +28,7 @@ def main(save_image=False):
     cmd = f'cp -r {model_dir} {sub_dir}'
     print(cmd)
     os.system(cmd)
-    os.system(f'cp start-wenet.sh {bin_dir}')
+    os.system(f'cp run-decoder {bin_dir}')
     os.system(f'cp Dockerfile {bin_dir}')
     version = get_version('../asr_api_server/__init__.py')
     name = 'asr_decode_server'
