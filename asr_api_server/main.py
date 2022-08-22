@@ -1,4 +1,5 @@
 import os
+import asyncio
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -6,6 +7,8 @@ from starlette.responses import HTMLResponse
 from asr_api_server.routers import router
 from asr_api_server.logger import logger
 from asr_api_server.config import CONF
+from asr_api_server.asr_consumer import consume
+
 
 from fastapi.staticfiles import StaticFiles
 root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +29,11 @@ def create_app():
 app = create_app()
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(consume())
+
 
 @app.get("/test")
 async def test():
