@@ -13,9 +13,11 @@ async def worker(url_audio, url_callback):
     2. send result to url_callback
     3. delete url_audio from db
     '''
+    pass
+
 
 async def consume():
-    concurrency = os.cpu_count // 2
+    concurrency = os.cpu_count() // 2
     print(f'set {concurrency = }')
     while 1:
         print('consuming ...')
