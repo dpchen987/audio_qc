@@ -128,8 +128,8 @@ async def speech_recognize(audio_info: AudioInfo = Body(..., title="音频信息
             return response
         text, exception = await asr_process.rec(audio)
         if exception:
-            response['status'] = 4004
-            response['message'] = f'{exception} times of getting exception'
+            response['code'] = 4004
+            response['msg'] = f'{exception} times of getting exception'
         response['data'] = text
         COUNTER -= 1
     except Exception as e:
