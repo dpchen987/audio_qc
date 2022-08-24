@@ -7,8 +7,9 @@ from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse
-
-
+from asr_api_server.asr_consumer import speech_recognize
+from asr_api_server import config
+ 
 def auth(appkey):
     return appkey == '123'
 
@@ -104,37 +105,19 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     COUNTER -= 1
     return ASRResponse(**response)
 
+
+
 @router.post("/speech_rec", response_model=RecognizeResponse)
 async def speech_recognize(audio_info: AudioInfo = Body(..., title="音频信息")):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
-    global COUNTER
-    # while COUNTER > COUNTER_MAX:
-    #     print(f'waiting in queque, cocurrency: {COUNTER}')
-    #     await asyncio.sleep(1)
-    try:
-        COUNTER += 1
-        response = {}
-        audio, msg = await asr_process.download(audio_info.file_path)
-        if msg != 'ok':
-            response['code'] = 4003
-            response['msg'] = msg
-            COUNTER -= 1
-            return response
-        if not audio:
-            response['code'] = 4002
-            response['msg'] = 'no audio data'
-            COUNTER -= 1
-            return response
-        text, exception = await asr_process.rec(audio)
-        if exception:
-            response['code'] = 4004
-            response['msg'] = f'{exception} times of getting exception'
-        response['data'] = text
-        COUNTER -= 1
-    except Exception as e:
-        logger.exception(e)
-        response['code'] = 4000
-        response['msg'] = str(e)
-        COUNTER -= 1
+    response = {}
+    if audio_info.task_id and audio_info.file_path:
+        config.url_db.Put(audio_info.task_id.encode(), audio_info.file_path.encode())
+        await asyncio.create_task(speech_recognize(audio_info))
+    else:
+        response['code'] = 4001
+        response['msg'] = 'no task_id or file_path'
+    for ri in config.url_db.RangeIter():
+        print(ri)
     return response

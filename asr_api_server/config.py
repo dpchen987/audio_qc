@@ -5,7 +5,7 @@ server的相关配置均由环境变量赋值，省去配置文件，方便部�
 
 import os
 import re
-
+import leveldb
 
 
 CONF = dict(
@@ -42,3 +42,6 @@ def get_ws():
     idx = WS_INDEX % len(CONF['ws'])
     WS_INDEX = idx + 1
     return CONF['ws'][idx]
+
+
+url_db = leveldb.LevelDB('./leveldb')
