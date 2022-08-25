@@ -18,7 +18,9 @@ asr_num = asyncio.Semaphore(COUNTER_MAX)
 CALLBACK_URL = ""
 
 async def asy_timer():
-    # 定期检查是否有未执行的任务，并处理    
+    '''定期检查是否有未执行的任务，并处理    
+    初始API的CALLBACK_URL位空，有调用后CALLBACK_URL取回调url
+    '''
     await asyncio.sleep(60)
     global CALLBACK_URL
     logger.info("Regular inspection tasks execution ...")
