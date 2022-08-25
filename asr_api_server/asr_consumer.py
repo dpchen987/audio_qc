@@ -33,7 +33,7 @@ async def consume():
         #     asyncio.creat_task(worker(url_audio, url_callback))
         await asyncio.sleep(1)
 
-
+COUNTER = 0
 async def speech_recognize(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''

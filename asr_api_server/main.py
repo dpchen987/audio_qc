@@ -7,7 +7,7 @@ from starlette.responses import HTMLResponse
 from asr_api_server.routers import router
 from asr_api_server.logger import logger
 from asr_api_server.config import CONF
-from asr_api_server.asr_consumer import consume, speech_recognize
+from asr_api_server.asr_consumer import asy_timer
 import leveldb
 
 from fastapi.staticfiles import StaticFiles
@@ -30,11 +30,9 @@ app = create_app()
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# @app.on_event("startup")
-# async def startup_event():
-#     global url_db
-#     url_db = leveldb.LevelDB('./leveldb')
-
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(asy_timer())
 
 @app.get("/test")
 async def test():
