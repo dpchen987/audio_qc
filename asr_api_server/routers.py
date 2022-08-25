@@ -128,10 +128,8 @@ async def callback_test(callback_para: CallBackParam = Body(..., title="音频�
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
     response = {}
-    if callback_para.task_id and callback_para.code == 0:
+    if callback_para.task_id and callback_para.code:
         logger.info(f"{callback_para.task_id}:回调成功！")
         response['code'] = 1
-    else:
-        response['code'] = 4001
-        response['msg'] = 'no task_id or file_path'
+        logger.info(f"{callback_para.err_msg=}")
     return response

@@ -113,14 +113,15 @@ async def rec_vad_ws(audio_origin):
             if repr(e) not in exception_ls: exception_ls.append(repr(e))
         results.append(result)
     timing = time.time() - b
+    exception_info = f"{exception} exceptions : {', '.join(exception_ls)}" if exception else None
     msg = (f'REC: duration: [{duration}] seconds, '
            f'time use:{timing}, max len of segment: {max_len}, '
-           f'segments_count: {len(segments)}, {exception=}')
+           f'segments_count: {len(segments)}, error: {exception_info}')
     logger.info(msg)
     text = ','.join([r['text'] for r in results])
     text = re.sub(r'<.*?>', '', text)
     logger.info(text)
-    return text, f"{exception} exceptions : {', '.join(exception_ls)}"
+    return text, exception_info
 
 
 async def rec_vad_ws_batch(audio_origin):
