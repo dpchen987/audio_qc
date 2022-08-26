@@ -43,7 +43,8 @@ async def speech_recognize(audio_info):
     #     print(f'waiting in queque, cocurrency: {COUNTER}')
     #     await asyncio.sleep(1)
     Callback_param = {"task_id": audio_info.task_id}
-    if not CALLBACK_URL: CALLBACK_URL = audio_info.callback_url
+#     if not CALLBACK_URL: CALLBACK_URL = audio_info.callback_url
+    CALLBACK_URL = audio_info.callback_url
     try:
         COUNTER += 1
         async with asr_num:
