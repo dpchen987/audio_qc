@@ -119,8 +119,6 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     else:
         response['code'] = 4001
         response['msg'] = 'no task_id or file_path'
-    for ri in config.url_db.RangeIter():
-        print(ri)
     return response
 
 @router.post("/callBack_test", response_model=RecognizeResponse)
@@ -130,6 +128,6 @@ async def callback_test(callback_para: CallBackParam = Body(..., title="音频�
     response = {}
     if callback_para.task_id:
         logger.info(f"{callback_para.task_id}:回调成功！")
-        response['code'] = 1
+        response['code'] = 0
         logger.info(f"{callback_para.err_msg=}")
     return response

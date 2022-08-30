@@ -7,7 +7,7 @@ import asyncio, aiohttp
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server import config
-from asr_api_server.data_model.api_model import AudioInfo
+from asr_api_server.data_model.api_model import AudioInfo, CallBackParam
 
 COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
 COUNTER = 0
@@ -20,6 +20,7 @@ CALLBACK_URL = ""
 async def asy_timer():
     '''定期检查是否有未执行的任务，并处理    
     初始API的CALLBACK_URL位空，有调用后CALLBACK_URL取回调url
+    只补调一次
     '''
     await asyncio.sleep(60)
     global CALLBACK_URL
@@ -32,6 +33,7 @@ async def asy_timer():
             asyncio.create_task(speech_recognize(audio_info))
             logger.info(f"create task：{audio_info.task_id}")
             config.processing_set.add(audio_info.task_id)
+            config.url_db.Delete(audio_info.task_id.encode())
     asyncio.create_task(asy_timer())
     
 async def speech_recognize(audio_info):
@@ -42,7 +44,7 @@ async def speech_recognize(audio_info):
     # while COUNTER > COUNTER_MAX:
     #     print(f'waiting in queque, cocurrency: {COUNTER}')
     #     await asyncio.sleep(1)
-    Callback_param = {"task_id": audio_info.task_id}
+    Callback_param = {"task_id": audio_info.task_id, "code":0, "content": '', "err_msg":"success"}
 #     if not CALLBACK_URL: CALLBACK_URL = audio_info.callback_url
     CALLBACK_URL = audio_info.callback_url
     try:
@@ -74,13 +76,16 @@ async def speech_recognize(audio_info):
         COUNTER -= 1
     finally:
         # 回调接口调用
-        async with aiohttp.ClientSession(trust_env=True) as session:
-            async with session.post(url=audio_info.callback_url, json=Callback_param) as resp:
-                html = await resp.text() 
-        if json.loads(html)["code"] == 1:
+        logger.info(f"{Callback_param}")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=audio_info.callback_url, data=json.dumps(Callback_param, ensure_ascii=False), headers={'content-type': 'application/json'}) as resp:
+                html = await resp.text()
+        resp_dt = json.loads(html)
+        if resp_dt["code"] == 0:
             # 识别完成，清理数据库
             config.url_db.Delete(audio_info.task_id.encode())
         else:
             logger.info("回调失败！！")
+            logger.info(f"{resp_dt}")
         # 不管回调是否成功，都删除processing_set中的task
         config.processing_set.discard(audio_info.task_id)
