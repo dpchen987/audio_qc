@@ -47,3 +47,4 @@ def get_ws():
 url_db = leveldb.LevelDB('./leveldb')
 
 processing_set = set()
+background_tasks = set()

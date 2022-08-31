@@ -24,14 +24,14 @@ async def asy_timer():
     '''
     await asyncio.sleep(60)
     global CALLBACK_URL
-    logger.info("Regular inspection tasks execution ...")
+    logger.info("-----Regular inspection tasks execution ...-----")
     logger.info(f"CallBack url:{CALLBACK_URL}")
     logger.info(f"tasks under processing: {config.processing_set}")
     for task_id, audio_url in config.url_db.RangeIter():
         if task_id.decode() not in config.processing_set and CALLBACK_URL:
             audio_info = AudioInfo(task_id=task_id.decode() , file_path=audio_url.decode(), callback_url=CALLBACK_URL)
             asyncio.create_task(speech_recognize(audio_info))
-            logger.info(f"create task：{audio_info.task_id}")
+            logger.info(f"Recreate task：-----{audio_info.task_id} ！！！----")
             config.processing_set.add(audio_info.task_id)
             config.url_db.Delete(audio_info.task_id.encode())
     asyncio.create_task(asy_timer())
@@ -75,17 +75,21 @@ async def speech_recognize(audio_info):
         Callback_param['err_msg'] = str(e)
         COUNTER -= 1
     finally:
-        # 回调接口调用
-        logger.info(f"{Callback_param}")
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url=audio_info.callback_url, data=json.dumps(Callback_param, ensure_ascii=False), headers={'content-type': 'application/json'}) as resp:
-                html = await resp.text()
-        resp_dt = json.loads(html)
-        if resp_dt["code"] == 0:
-            # 识别完成，清理数据库
-            config.url_db.Delete(audio_info.task_id.encode())
-        else:
-            logger.info("回调失败！！")
-            logger.info(f"{resp_dt}")
         # 不管回调是否成功，都删除processing_set中的task
         config.processing_set.discard(audio_info.task_id)
+        try:
+            # 回调接口调用
+            logger.info(f"{Callback_param}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=audio_info.callback_url, data=json.dumps(Callback_param, ensure_ascii=False), headers={'content-type': 'application/json'}) as resp:
+                    html = await resp.text()
+            resp_dt = json.loads(html)
+            if resp_dt["code"] == 0:
+                # 识别完成，清理数据库
+                config.url_db.Delete(audio_info.task_id.encode())
+            else:
+                logger.info("回调失败！！")
+                logger.info(f"{resp_dt}")
+        except Exception as e:
+            logger.info("回调失败！！")
+            logger.exception(e)

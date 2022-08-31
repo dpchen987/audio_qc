@@ -114,7 +114,13 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     response = {}
     if audio_info.task_id and audio_info.file_path:
         config.url_db.Put(audio_info.task_id.encode(), audio_info.file_path.encode())
-        asyncio.create_task(speech_recognize(audio_info))
+        task = asyncio.create_task(speech_recognize(audio_info))
+        # Add task to the set. This creates a strong reference.
+        config.background_tasks.add(task)
+        # To prevent keeping references to finished tasks forever,
+        # make each task remove its own reference from the set after
+        # completion:
+        task.add_done_callback(config.background_tasks.discard)
         config.processing_set.add(audio_info.task_id)
     else:
         response['code'] = 4001
