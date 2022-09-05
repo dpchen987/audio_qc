@@ -9,14 +9,18 @@ from asr_api_server.logger import logger
 from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse
 from asr_api_server.asr_consumer import speech_recognize
 from asr_api_server import config
- 
+
 def auth(appkey):
     return appkey == '123'
 
 
 router = APIRouter()
 COUNTER = 0
-COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
+cm = os.environ.get('ASR_API_CONCURRENCY')
+if cm:
+    COUNTER_MAX = int(cm)
+else:
+    COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
 print('==='*10)
 print(f'Max concurrency supported by this machine is {COUNTER_MAX}')
 print('==='*10)
@@ -73,9 +77,9 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if not auth(query.appkey):
         return ASRResponse(**error)
     global COUNTER
-    # while COUNTER > COUNTER_MAX:
-    #     print(f'waiting in queque, cocurrency: {COUNTER}')
-    #     await asyncio.sleep(1)
+    while COUNTER > COUNTER_MAX:
+        print(f'waiting in queque, cocurrency: {COUNTER}')
+        await asyncio.sleep(1)
     COUNTER += 1
     if query.audio_url:
         audio, msg = await asr_process.download(query.audio_url)
@@ -112,12 +116,7 @@ async def speech_recognize(audio_info: AudioInfo = Body(..., title="音频信息
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
     response = {}
-    if audio_info.task_id and audio_info.file_path:
-        config.url_db.Put(audio_info.task_id.encode(), audio_info.file_path.encode())
-        await asyncio.create_task(speech_recognize(audio_info))
-    else:
-        response['code'] = 4001
-        response['msg'] = 'no task_id or file_path'
-    for ri in config.url_db.RangeIter():
-        print(ri)
+    response['code'] = 4001
+    response['msg'] = 'no task_id or file_path'
+    print('bye!!!')
     return response
