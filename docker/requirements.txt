@@ -10,4 +10,5 @@ SoundFile==0.10.3.post1
 scikit_learn==0.23.1
 soxr==0.2.7
 librosa==0.8.1
-onnxruntime
+onnxruntime==1.12.1
+leveldb
