@@ -5,12 +5,14 @@ COPY pip-pkg/* /app/pip-pkg/
 COPY asr_api_server-$version-cp38-cp38-linux_x86_64.whl /app
 
 # prepaire for build fasttext
-RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib non-free"  > /etc/apt/sources.list \
-    && apt-get update && apt-get install -y libsndfile1 \
-    && pip install pip-pkg/* \
-    && pip install asr_api_server-$version-cp38-cp38-linux_x86_64.whl \
+RUN echo "deb https://mirrors.nju.edu.cn/debian/ bullseye main contrib non-free"  > /etc/apt/sources.list \
+    && apt-get update && apt-get install -y  --no-install-recommends libsndfile1 g++ \
+    && pip install --no-cache-dir pip-pkg/* \
+    && pip install --no-cache-dir asr_api_server-$version-cp38-cp38-linux_x86_64.whl \
     && rm -rf pip-pkg \
     && rm *.whl \
+    && apt-get remove g++ -y \
+    && apt-get autoremove -y \
     && apt-get clean -y \
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/*
