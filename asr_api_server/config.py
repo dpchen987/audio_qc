@@ -17,9 +17,9 @@ CONF = dict(
 
 def parse_env():
     global CONF
-    CONF['host'] = os.getenv('SDC_HOST', CONF['host'])
-    CONF['port'] = int(os.getenv('SDC_PORT', CONF['port']))
-    ws = os.getenv('SDC_WS', '')
+    CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])
+    CONF['port'] = int(os.getenv('ASR_API_PORT', CONF['port']))
+    ws = os.getenv('ASR_WS', '')
     if ws:
         ws = re.split(r'[,\s]+', ws)
         for w in ws:

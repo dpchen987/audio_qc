@@ -11,15 +11,15 @@ from .logger import logger
 from .easytimer import Timer
 
 eztimer = Timer(logger)
-if os.environ.get('VAD_WEBRTC'):
+if os.environ.get('ASR_VAD_WEBRTC'):
     from asr_api_server.vad_webrtc import vad
     print('==='*20)
-    print('Using VAD_WEBRTC ...')
+    print('Using ASR_VAD_WEBRTC ...')
     print('==='*20)
 else:
     from asr_api_server.vad_gpvad import vad
     print('==='*20)
-    print('Using VAD_GPVAD ...')
+    print('Using ASR_VAD_GPVAD ...')
     print('==='*20)
 model_dir = os.environ.get('ASR_LOCAL_MODEL')
 if model_dir:
@@ -32,9 +32,9 @@ if model_dir:
 else:
     asr_type = 'ws'
     print('=== No environ: ASR_LOCAL_MODEL, Using [ws] decoder ===')
-    if os.environ.get('ASR_BATCH'):
+    if os.environ.get('ASR_RUN_BATCH'):
         asr_type = 'ws_batch'
-        print('\t=== Using [ws_batch] decoder ===')
+        print('\t=== Using [ws_run_batch] decoder ===')
         from asr_api_server.ws_query_batch import ws_rec
     else:
         from asr_api_server.ws_query import ws_rec
