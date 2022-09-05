@@ -47,7 +47,7 @@ async def test():
 def run():
     import uvicorn
     reload = False
-    uvicorn.run('asr_api_server.main:app', host=CONF['host'], port=CONF['port'], reload=reload)
+    uvicorn.run('asr_api_server.main:app', host=CONF['host'], port=CONF['port'], reload=reload, loop='uvloop')
 
 
 if __name__ == '__main__':
