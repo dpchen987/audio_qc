@@ -52,7 +52,7 @@ async def download(url):
                     data = b''
                     msg = f'download {url} failed with status: {resp.status}'
     except Exception as e:
-        logger.error(e)
+        logger.exception(e)
         data = b''
         msg = 'download audio url failed with exception: {}'.format(e)
     time_cost = time.time() - b
@@ -100,6 +100,7 @@ async def rec_vad_ws(audio_origin):
         tasks.append(t)
     results = []
     exception = 0
+    exception_ls = []
     for task in tasks:
         result = {'err': ''}
         try:
@@ -109,16 +110,18 @@ async def rec_vad_ws(audio_origin):
             result['text'] = ''
             result['err'] = str(e)
             exception += 1
+            if repr(e) not in exception_ls: exception_ls.append(repr(e))
         results.append(result)
     timing = time.time() - b
+    exception_info = f"{exception} exceptions : {', '.join(exception_ls)}" if exception else None
     msg = (f'REC: duration: [{duration}] seconds, '
            f'time use:{timing}, max len of segment: {max_len}, '
-           f'segments_count: {len(segments)}, {exception=}')
+           f'segments_count: {len(segments)}, error: {exception_info}')
     logger.info(msg)
     text = ','.join([r['text'] for r in results])
     text = re.sub(r'<.*?>', '', text)
     logger.info(text)
-    return text, exception
+    return text, exception_info
 
 
 async def rec_vad_ws_batch(audio_origin):

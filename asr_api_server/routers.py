@@ -6,7 +6,7 @@ from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
-from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse
+from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse, CallBackParam
 from asr_api_server.asr_consumer import speech_recognize
 from asr_api_server import config
 
@@ -110,13 +110,34 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     return ASRResponse(**response)
 
 
-
 @router.post("/speech_rec", response_model=RecognizeResponse)
-async def speech_recognize(audio_info: AudioInfo = Body(..., title="音频信息")):
+async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
     response = {}
-    response['code'] = 4001
-    response['msg'] = 'no task_id or file_path'
-    print('bye!!!')
+    if audio_info.task_id and audio_info.file_path:
+        config.url_db.Put(audio_info.task_id.encode(), audio_info.file_path.encode())
+        task = asyncio.create_task(speech_recognize(audio_info))
+        # Add task to the set. This creates a strong reference.
+        config.background_tasks.add(task)
+        # To prevent keeping references to finished tasks forever,
+        # make each task remove its own reference from the set after
+        # completion:
+        task.add_done_callback(config.background_tasks.discard)
+        config.processing_set.add(audio_info.task_id)
+    else:
+        response['code'] = 4001
+        response['msg'] = 'no task_id or file_path'
+    return response
+
+
+@router.post("/callBack_test", response_model=RecognizeResponse)
+async def callback_test(callback_para: CallBackParam = Body(..., title="音频信息")):
+    '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
+    '''
+    response = {}
+    if callback_para.task_id:
+        logger.info(f"{callback_para.task_id}:回调成功！")
+        response['code'] = 0
+        logger.info(f"{callback_para.err_msg=}")
     return response

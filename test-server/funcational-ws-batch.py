@@ -17,7 +17,7 @@ async def main(fn, batch_size):
     data = data.tobytes()
     b = time.time()
     text = await ws_rec([data]*batch_size)
-    print(f'{len(text) = }', time.time() - b)
+    print(f'{len(text) = }, time cost ', time.time() - b)
     for i, t in enumerate(text):
         print(i, t)
 
