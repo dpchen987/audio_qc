@@ -15,4 +15,4 @@ RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ bullseye main contrib
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/*
 
-CMD [ "asr_api_server"]
+CMD ["asr_api_server"]
