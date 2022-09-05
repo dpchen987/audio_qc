@@ -12,11 +12,15 @@ CONF = dict(
     host='0.0.0.0',
     port=8300,
     ws=['ws://127.0.0.1:8301'],
+    url_db='',  # must be set as environmente
 )
 
 
 def parse_env():
     global CONF
+    CONF['url_db'] = os.getenv('ASR_API_URL_DB', '')
+    if not CONF['url_db']:
+        raise ValueError('environmente ASR_API_URL_DB must be set!!!')
     CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])
     CONF['port'] = int(os.getenv('ASR_API_PORT', CONF['port']))
     ws = os.getenv('ASR_WS', '')
@@ -44,7 +48,7 @@ def get_ws():
     return CONF['ws'][idx]
 
 
-url_db = leveldb.LevelDB('./leveldb')
+url_db = leveldb.LevelDB(CONF['url_db'])
 
 processing_set = set()
 background_tasks = set()
