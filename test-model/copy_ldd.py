@@ -14,7 +14,7 @@ def get_ldd(bin_file):
     lines = out.split('\n')
     ldds = []
     for line in lines:
-        if '/wenet/' not in line:
+        if '/runtime/' not in line:
             continue
         src = line.split('=>')[1].strip().split(' ')[0]
         ldds.append(src)
