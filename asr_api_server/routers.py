@@ -130,14 +130,18 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
         response['msg'] = 'no task_id or file_path'
     return response
 
+CALLBACK_COUNTER = 0
 
 @router.post("/callBack_test", response_model=RecognizeResponse)
 async def callback_test(callback_para: CallBackParam = Body(..., title="音频信息")):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
+    global CALLBACK_COUNTER
     response = {}
     if callback_para.task_id:
         logger.info(f"{callback_para.task_id}:回调成功！")
         response['code'] = 0
         logger.info(f"{callback_para.err_msg=}")
+        CALLBACK_COUNTER += 1
+        print('============= ', f'{CALLBACK_COUNTER = }')
     return response
