@@ -158,7 +158,7 @@ def extract_feature(wavefilepath):
         wav = wav.mean(-1)
     wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
     mel = librosa.feature.melspectrogram(
-        wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
+        y=wav.astype(np.float32), sr=SAMPLE_RATE, **LMS_ARGS)
     return np.log(mel + EPS).T
 
 
@@ -172,7 +172,7 @@ def extract_feature_mem(wav, sr):
         wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
     b = time.time()
     mel = librosa.feature.melspectrogram(
-        wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
+        y=wav.astype(np.float32), sr=SAMPLE_RATE, **LMS_ARGS)
     feat = np.log(mel + EPS).T
     print('---------- mel feature time', time.time() - b)
     return feat
