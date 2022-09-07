@@ -2,8 +2,10 @@
 # coding:utf-8
 
 
-import os, json, time
-import asyncio, aiohttp
+import os
+import json
+import asyncio
+import aiohttp
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server import config
@@ -11,14 +13,12 @@ from asr_api_server.data_model.api_model import AudioInfo, CallBackParam
 
 COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
 COUNTER = 0
-# dwn_num = asyncio.Semaphore(COUNTER_MAX) 
-asr_num = asyncio.Semaphore(COUNTER_MAX) 
-# dwn_num = asyncio.Semaphore(10) 
-# asr_num = asyncio.Semaphore(3) 
+ASR_NUM = None
 CALLBACK_URL = ""
 
+
 async def asy_timer():
-    '''定期检查是否有未执行的任务，并处理    
+    '''定期检查是否有未执行的任务，并处理
     初始API的CALLBACK_URL位空，有调用后CALLBACK_URL取回调url
     只补调一次
     '''
@@ -29,18 +29,24 @@ async def asy_timer():
     logger.info(f"tasks under processing: {config.processing_set}")
     for task_id, audio_url in config.url_db.RangeIter():
         if task_id.decode() not in config.processing_set and CALLBACK_URL:
-            audio_info = AudioInfo(task_id=task_id.decode() , file_path=audio_url.decode(), callback_url=CALLBACK_URL)
+            audio_info = AudioInfo(
+                    task_id=task_id.decode(),
+                    file_path=audio_url.decode(), callback_url=CALLBACK_URL)
             asyncio.create_task(speech_recognize(audio_info))
             logger.info(f"Recreate task：-----{audio_info.task_id} ！！！----")
             config.processing_set.add(audio_info.task_id)
             config.url_db.Delete(audio_info.task_id.encode())
     asyncio.create_task(asy_timer())
-    
+
+
 async def speech_recognize(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
     global COUNTER
     global CALLBACK_URL
+    global ASR_NUM
+    if ASR_NUM is None:
+        ASR_NUM = asyncio.Semaphore(COUNTER_MAX)
     # while COUNTER > COUNTER_MAX:
     #     print(f'waiting in queque, cocurrency: {COUNTER}')
     #     await asyncio.sleep(1)
@@ -49,19 +55,20 @@ async def speech_recognize(audio_info):
     CALLBACK_URL = audio_info.callback_url
     try:
         COUNTER += 1
-        async with asr_num:
+        async with ASR_NUM:
+            print('=============== asr_consumer counter ', COUNTER)
             # 音频下载
             audio, msg = await asr_process.download(audio_info.file_path)
             if msg != 'ok':
                 Callback_param['code'] = 4003
                 Callback_param['err_msg'] = msg
                 COUNTER -= 1
-                return 
+                return
             if not audio:
                 Callback_param['code'] = 4002
                 Callback_param['err_msg'] = 'no audio data'
                 COUNTER -= 1
-                return 
+                return
             # 音频转译
             text, exception = await asr_process.rec(audio)
             if exception:
