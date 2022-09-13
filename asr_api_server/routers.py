@@ -16,14 +16,6 @@ def auth(appkey):
 
 router = APIRouter()
 COUNTER = 0
-cm = os.environ.get('ASR_API_CONCURRENCY')
-if cm:
-    COUNTER_MAX = int(cm)
-else:
-    COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
-print('==='*10)
-print(f'Max concurrency supported by this machine is {COUNTER_MAX}')
-print('==='*10)
 
 
 @router.get('/status')
@@ -44,7 +36,7 @@ async def recognize_file(
     if not auth(query.appkey):
         return ASRResponse(**error)
     global COUNTER
-    while COUNTER > COUNTER_MAX:
+    while COUNTER > config.CONF['concurrency']:
         print(f'waiting in queque, cocurrency: {COUNTER}')
         await asyncio.sleep(1)
     COUNTER += 1
@@ -77,7 +69,7 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if not auth(query.appkey):
         return ASRResponse(**error)
     global COUNTER
-    while COUNTER > COUNTER_MAX:
+    while COUNTER > config.CONF['concurrency']:
         print(f'waiting in queque, cocurrency: {COUNTER}')
         await asyncio.sleep(1)
     COUNTER += 1

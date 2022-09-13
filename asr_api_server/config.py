@@ -13,6 +13,7 @@ CONF = dict(
     port=8300,
     ws=['ws://127.0.0.1:8301'],
     url_db='',  # must be set as environmente
+    concurrency=10,
 )
 
 
@@ -33,6 +34,8 @@ def parse_env():
         print('***'*10)
         print('websocket_server:', CONF['ws'])
         print('***'*10)
+    concur = os.getenv('ASR_API_CONCURRENCY', int(os.cpu_count() / 2))
+    CONF['concurrency'] = int(concur)
 
 
 parse_env()

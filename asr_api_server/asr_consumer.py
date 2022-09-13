@@ -9,10 +9,8 @@ import aiohttp
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server import config
-from asr_api_server.data_model.api_model import AudioInfo, CallBackParam
+from asr_api_server.data_model.api_model import AudioInfo
 
-COUNTER_MAX = int(round(os.cpu_count() / 2, 0))
-COUNTER = 0
 ASR_NUM = None
 CALLBACK_URL = ""
 
@@ -42,32 +40,23 @@ async def asy_timer():
 async def speech_recognize(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
-    global COUNTER
     global CALLBACK_URL
     global ASR_NUM
     if ASR_NUM is None:
-        ASR_NUM = asyncio.Semaphore(COUNTER_MAX)
-    # while COUNTER > COUNTER_MAX:
-    #     print(f'waiting in queque, cocurrency: {COUNTER}')
-    #     await asyncio.sleep(1)
+        ASR_NUM = asyncio.Semaphore(config.CONF['concurrency'])
     Callback_param = {"task_id": audio_info.task_id, "code":0, "content": '', "err_msg":"success"}
-#     if not CALLBACK_URL: CALLBACK_URL = audio_info.callback_url
     CALLBACK_URL = audio_info.callback_url
     try:
-        COUNTER += 1
         async with ASR_NUM:
-            print('=============== asr_consumer counter ', COUNTER)
             # 音频下载
             audio, msg = await asr_process.download(audio_info.file_path)
             if msg != 'ok':
                 Callback_param['code'] = 4003
                 Callback_param['err_msg'] = msg
-                COUNTER -= 1
                 return
             if not audio:
                 Callback_param['code'] = 4002
                 Callback_param['err_msg'] = 'no audio data'
-                COUNTER -= 1
                 return
             # 音频转译
             text, exception = await asr_process.rec(audio)
@@ -75,12 +64,10 @@ async def speech_recognize(audio_info):
                 Callback_param['code'] = 4004
                 Callback_param['err_msg'] = exception
             Callback_param['content'] = text
-            COUNTER -= 1
     except Exception as e:
         logger.exception(e)
         Callback_param['code'] = 4000
         Callback_param['err_msg'] = str(e)
-        COUNTER -= 1
     finally:
         # 不管回调是否成功，都删除processing_set中的task
         config.processing_set.discard(audio_info.task_id)
