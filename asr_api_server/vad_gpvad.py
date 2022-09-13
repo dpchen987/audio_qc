@@ -11,14 +11,19 @@ VAD = GPVAD('sre')
 def cut(timeline, data, samplerate):
     segments = []
     last_duration = 0
-    min_duration = 2000  # 1s
-    max_duration = 10000  # 10s
+    max_duration = 3000  # ms
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
         start = int(tl[0] / 1000 * samplerate)
         end = int(tl[1] / 1000 * samplerate)
         segment = data[start: end]
-        if segments and duration < min_duration and last_duration < max_duration:
+        if i == 0:
+            segments.append(segment)
+            last_duration = duration
+            continue
+        if duration < max_duration and (
+                i == len(timeline) - 1 or
+                last_duration < max_duration):
             # this seg append to last seg
             segments[-1] = np.append(segments[-1], segment)
             last_duration += duration
@@ -45,3 +50,5 @@ if __name__ == '__main__':
     data = open(fp, 'rb').read()
     s, d, sr = vad(data)
     print(s, d, sr)
+    for i, x in enumerate(s):
+        sf.write(f'{i}.wav', x, sr)
