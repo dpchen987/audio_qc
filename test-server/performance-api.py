@@ -10,23 +10,6 @@ import aiohttp
 import statistics
 
 
-async def test_coro(audio_data, api):
-    headers = {
-        'appkey': '123',
-        'format': 'pcm',
-    }
-    begin = time.time()
-    async with aiohttp.ClientSession() as session:
-        async with session.post(api, data=audio_data, headers=headers) as resp:
-            text = await resp.text()
-    time_cost = time.time() - begin
-    text = json.loads(text)['text']
-    return {
-        'text': text,
-        'time': time_cost,
-    }
-
-
 def get_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(
@@ -58,6 +41,21 @@ def print_result(info):
         print(f'\t{k: >{length}} : {v}')
 
 
+async def test_coro(api, audio_data, uttid, texts, times):
+    headers = {
+        'appkey': '123',
+        'format': 'pcm',
+    }
+    begin = time.time()
+    async with aiohttp.ClientSession() as session:
+        async with session.post(api, data=audio_data, headers=headers) as resp:
+            text = await resp.text()
+    time_cost = time.time() - begin
+    text = json.loads(text)['text']
+    texts.append(f'{uttid}\t{text}\n')
+    times.append(time_cost)
+
+
 async def main(args):
     wav_scp = []
     total_duration = 0
@@ -78,23 +76,17 @@ async def main(args):
     request_times = []
     begin = time.time()
     for i, (_uttid, data) in enumerate(wav_scp):
-        task = asyncio.create_task(test_coro(data, args.api_uri))
-        tasks.append((_uttid, task))
+        task = asyncio.create_task(
+                test_coro(args.api_uri, data, _uttid, texts, request_times))
+        tasks.append(task)
         if len(tasks) < args.num_concurrence:
             continue
         print((f'{i=}, start {args.num_concurrence} '
                f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
-        for uttid, task in tasks:
-            result = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
-            request_times.append(result['time'])
-        tasks = []
-        print(f'\tdone @ {time.strftime("%m-%d %H:%M:%S")}')
-    if tasks:
-        for uttid, task in tasks:
-            result = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
-            request_times.append(result['time'])
+        task = tasks.pop(0)
+        await task
+    for uttid, task in tasks:
+        await task
     request_time = time.time() - begin
     rtf = request_time / total_duration
     concur_info = {
