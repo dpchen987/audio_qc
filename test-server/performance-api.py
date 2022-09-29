@@ -8,6 +8,7 @@ import asyncio
 import argparse
 import aiohttp
 import statistics
+import soundfile as sf
 
 
 def get_args():
@@ -51,6 +52,7 @@ async def test_coro(api, audio_data, uttid, texts, times):
         async with session.post(api, data=audio_data, headers=headers) as resp:
             text = await resp.text()
     time_cost = time.time() - begin
+    print(text)
     text = json.loads(text)['text']
     texts.append(f'{uttid}\t{text}\n')
     times.append(time_cost)
@@ -63,14 +65,14 @@ async def main(args):
         for line in f:
             zz = line.strip().split()
             assert len(zz) == 2
-            with open(zz[1], 'rb') as f:
-                data = f.read()
-            duration = (len(data) - 44)/2/16000
+            data, sr = sf.read(zz[1], dtype='int16')
+            duration = len(data) / 16000
+            data = open(zz[1], 'rb').read()
             total_duration += duration
             wav_scp.append((zz[0], data))
     print(f'{len(wav_scp) = }, {total_duration = }')
 
-    tasks = []
+    tasks = set()
     failed = 0
     texts = []
     request_times = []
@@ -78,15 +80,17 @@ async def main(args):
     for i, (_uttid, data) in enumerate(wav_scp):
         task = asyncio.create_task(
                 test_coro(args.api_uri, data, _uttid, texts, request_times))
-        tasks.append(task)
+        tasks.add(task)
+        task.add_done_callback(tasks.discard)
         if len(tasks) < args.num_concurrence:
             continue
         print((f'{i=}, start {args.num_concurrence} '
                f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
-        task = tasks.pop(0)
-        await task
-    for uttid, task in tasks:
-        await task
+        await asyncio.sleep(0.1)
+        while len(tasks) >= args.num_concurrence:
+            await asyncio.sleep(0.1)
+    while tasks:
+        await asyncio.sleep(0.1)
     request_time = time.time() - begin
     rtf = request_time / total_duration
     concur_info = {
@@ -112,7 +116,7 @@ async def main(args):
     with open(args.save_to, 'w', encoding='utf8') as fsave:
         fsave.write(''.join(texts))
     # caculate CER
-    cmd = (f'python ../test-model/compute-wer.py --char=1 --v=1 '
+    cmd = (f'../test-model/compute-wer.py --char=1 --v=1 '
            f'--ig={args.ignore} '
            f'{args.trans} {args.save_to} > '
            f'{args.save_to}-test-{args.num_concurrence}.cer.txt')
