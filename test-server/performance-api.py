@@ -52,7 +52,6 @@ async def test_coro(api, audio_data, uttid, texts, times):
         async with session.post(api, data=audio_data, headers=headers) as resp:
             text = await resp.text()
     time_cost = time.time() - begin
-    print(text)
     text = json.loads(text)['text']
     texts.append(f'{uttid}\t{text}\n')
     times.append(time_cost)
@@ -84,8 +83,9 @@ async def main(args):
         task.add_done_callback(tasks.discard)
         if len(tasks) < args.num_concurrence:
             continue
-        print((f'{i=}, start {args.num_concurrence} '
-               f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
+        if i % args.num_concurrence == 0:
+            print((f'{i=}, start {args.num_concurrence} '
+                   f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
         await asyncio.sleep(0.1)
         while len(tasks) >= args.num_concurrence:
             await asyncio.sleep(0.1)
