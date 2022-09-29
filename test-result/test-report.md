@@ -61,5 +61,6 @@ SPEECHIO 开源20类中文语音数据，每类选取150条，合计3000条。
 | 环境二    | 2022-06-13 | 20220609_u2pp_conformer | 9.39 % | 0.05322| onnx_cpu            | checkpoint 前十均值 |
 | 环境一    | 2022-07-13 | 20220712_u2pp_conformer | 9.01 % | 0.05052| libtorch + 浮点模型 | checkpoint 10-31前十均值 |
 | 环境一    | 2022-07-25 | 20220725_u2pp_conformer | 8.93 % | 0.04276| libtorch + 浮点模型 | checkpoint 30-57前十均值 |
+| 环境一    | 2022-09-29 | 20220926_conformer | 8.15 % | 0.02899| libtorch + 浮点模型 | checkpoint 0-45前十均值 |
 
 
