@@ -30,9 +30,17 @@ WS_START = json.dumps({
     'nbest': 1,
     'continuous_decoding': False,
 })
+
 WS_END = json.dumps({
     'signal': 'end'
 })
+
+WS_START_BATCH = {
+    'signal': 'start',
+    'nbest': 1,
+    'batch_lens': [],
+    'enable_timestamp': False,
+}
 
 
 async def ws_rec(data, ws_uri):
@@ -70,6 +78,37 @@ async def ws_rec(data, ws_uri):
     }
 
 
+async def ws_rec_batch(data, ws_uri):
+    assert isinstance(data, list)
+    begin = time.time()
+    conn = await websockets.connect(ws_uri, ping_timeout=200)
+    # step 1: send start
+    WS_START_BATCH['batch_lens'] = [len(d) for d in data]
+    await conn.send(json.dumps(WS_START_BATCH))
+    await conn.recv()
+    # step 2: send audio data
+    await conn.send(b''.join(data))
+    result = await conn.recv()
+    jn = json.loads(result)
+    texts = []
+    if jn['status'] != 'ok':
+        print('failed from ws :', jn['message'])
+        texts = [''] * len(data)
+    else:
+        for result in jn['batch_result']:
+            texts.append(result['nbest'][0]['sentence'])
+    try:
+        await conn.close()
+    except Exception as e:
+        # this except has no effect, just log as debug
+        print(e)
+    time_cost = time.time() - begin
+    return {
+        'texts': texts,
+        'time': time_cost,
+    }
+
+
 def get_args():
     parser = argparse.ArgumentParser(description='')
     parser.add_argument(
@@ -87,6 +126,9 @@ def get_args():
     parser.add_argument(
         '-n', '--num_concurrence', type=int, required=True,
         help='num of concurrence for query')
+    parser.add_argument(
+        '-b', '--batch', type=int, default=1,
+        help='batch size for run_batch')
     args = parser.parse_args()
     return args
 
@@ -97,7 +139,66 @@ def print_result(info):
         print(f'\t{k: >{length}} : {v}')
 
 
+async def run(wav_scp, args):
+    tasks = []
+    texts = []
+    request_times = []
+    for i, (_uttid, data) in enumerate(wav_scp):
+        task = asyncio.create_task(ws_rec(data, args.ws_uri))
+        tasks.append((_uttid, task))
+        if len(tasks) < args.num_concurrence:
+            continue
+        print((f'{i=}, start {args.num_concurrence} '
+               f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
+        uttid, task = tasks.pop(0)
+        result = await task
+        texts.append(f'{uttid}\t{result["text"]}\n')
+        request_times.append(result['time'])
+    if tasks:
+        for uttid, task in tasks:
+            result = await task
+            texts.append(f'{uttid}\t{result["text"]}\n')
+            request_times.append(result['time'])
+    with open(args.save_to, 'w', encoding='utf8') as fsave:
+        fsave.write(''.join(texts))
+    return request_times
+
+
+async def run_batch(wav_scp, args):
+    def batchit(data, batch_size):
+        for i in range(0, len(data), batch_size):
+            yield data[i: i + batch_size]
+
+    tasks = []
+    texts = []
+    request_times = []
+    for i, batch in enumerate(batchit(wav_scp, args.batch)):
+        uttids = [b[0] for b in batch]
+        data = [b[1] for b in batch]
+        task = asyncio.create_task(ws_rec_batch(data, args.ws_uri))
+        tasks.append((uttids, task))
+        if len(tasks) < args.num_concurrence:
+            continue
+        if i % args.num_concurrence == 0:
+            print((f'{i=}, @ {time.strftime("%m-%d %H:%M:%S")}'))
+        uttids, task = tasks.pop(0)
+        result = await task
+        for j in range(len(uttids)):
+            texts.append(f'{uttids[j]}\t{result["texts"][j]}\n')
+        request_times.append(result['time'])
+    if tasks:
+        for uttids, task in tasks:
+            result = await task
+            for j in range(len(uttids)):
+                texts.append(f'{uttids[j]}\t{result["texts"][j]}\n')
+            request_times.append(result['time'])
+    with open(args.save_to, 'w', encoding='utf8') as fsave:
+        fsave.write(''.join(texts))
+    return request_times
+
+
 async def main(args):
+    # 1. read data
     wav_scp = []
     total_duration = 0
     with open(args.wav_scp) as f:
@@ -111,36 +212,22 @@ async def main(args):
             wav_scp.append((zz[0], data.tobytes()))
     print(f'{len(wav_scp) = }, {total_duration = }')
 
-    tasks = []
-    failed = 0
-    texts = []
-    request_times = []
+    # 2. run
     begin = time.time()
-    for i, (_uttid, data) in enumerate(wav_scp):
-        task = asyncio.create_task(ws_rec(data, args.ws_uri))
-        tasks.append((_uttid, task))
-        if len(tasks) < args.num_concurrence:
-            continue
-        print((f'{i=}, start {args.num_concurrence} '
-               f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
-        for uttid, task in tasks:
-            result = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
-            request_times.append(result['time'])
-        tasks = []
-        print(f'\tdone @ {time.strftime("%m-%d %H:%M:%S")}')
-    if tasks:
-        for uttid, task in tasks:
-            result = await task
-            texts.append(f'{uttid}\t{result["text"]}\n')
-            request_times.append(result['time'])
-    request_time = time.time() - begin
-    rtf = request_time / total_duration
+    if args.batch > 1:
+        print('runing batch...')
+        request_times = await run_batch(wav_scp, args)
+    else:
+        request_times = await run(wav_scp, args)
+
+    # 3. result
+    print('printing test result')
+    run_time = time.time() - begin
+    rtf = run_time / total_duration
     print('For all concurrence:')
     print_result({
-        'failed': failed,
         'total_duration': total_duration,
-        'request_time': request_time,
+        'run_time': run_time,
         'RTF': rtf,
     })
     print('For one request:')
@@ -150,10 +237,8 @@ async def main(args):
         'max_time': max(request_times),
         'min_time': min(request_times),
     })
-    with open(args.save_to, 'w', encoding='utf8') as fsave:
-        fsave.write(''.join(texts))
     # caculate CER
-    cmd = (f'python ../compute-wer.py --char=1 --v=1 '
+    cmd = (f'python compute-wer.py --char=1 --v=1 '
            f'{args.trans} {args.save_to} > '
            f'{args.save_to}-test-{args.num_concurrence}.cer.txt')
     print(cmd)
@@ -162,5 +247,5 @@ async def main(args):
 
 
 if __name__ == '__main__':
-    args = get_args()
-    asyncio.run(main(args))
+    args_ = get_args()
+    asyncio.run(main(args_))
