@@ -1,6 +1,7 @@
 FROM python:3.8-slim
 ARG version
 WORKDIR /app
+ENV TZ="Asia/Shanghai"
 
 # install basic packages
 COPY requirements.txt leveldb-0.201-cp38-cp38-linux_x86_64.whl /app/
