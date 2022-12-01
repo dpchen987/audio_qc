@@ -148,8 +148,8 @@ async def run(wav_scp, args):
         tasks.append((_uttid, task))
         if len(tasks) < args.num_concurrence:
             continue
-        print((f'{i=}, start {args.num_concurrence} '
-               f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
+        if i % args.num_concurrence == 0:
+            print((f'{i=}, @ {time.strftime("%m-%d %H:%M:%S")}'))
         uttid, task = tasks.pop(0)
         result = await task
         texts.append(f'{uttid}\t{result["text"]}\n')
