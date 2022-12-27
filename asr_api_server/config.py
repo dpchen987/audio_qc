@@ -12,14 +12,14 @@ CONF = dict(
     host='0.0.0.0',
     port=8300,
     ws=['ws://127.0.0.1:8301'],
-    url_db='',  # must be set as environmente
+    url_db='./db',  # must be set as environmente
     concurrency=10,
 )
 
 
 def parse_env():
     global CONF
-    CONF['url_db'] = os.getenv('ASR_API_URL_DB', '')
+    CONF['url_db'] = os.getenv('ASR_API_URL_DB', './db')
     if not CONF['url_db']:
         raise ValueError('environmente ASR_API_URL_DB must be set!!!')
     CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])

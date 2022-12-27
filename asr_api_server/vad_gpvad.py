@@ -4,8 +4,8 @@ import numpy as np
 from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
 from asr_api_server.logger import logger
 
-
-VAD = GPVAD('sre')
+# 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
+VAD = GPVAD()
 
 
 def cut(timeline, data, samplerate):

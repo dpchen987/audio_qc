@@ -10,6 +10,8 @@ def convert(model_name):
     root_dir = os.path.dirname(os.path.abspath(__file__))
     if model_name == 'sre':
         model_path = os.path.join(root_dir, 'pretrained_models/sre/model.pth')
+    elif model_name == 't2bal':
+        model_path = os.path.join(root_dir, 'pretrained_models/t2bal/t2bal.pt')
     else:
         model_path = os.path.join(root_dir, 'pretrained_models/audio2_vox2/model.pth')
     model = crnn(
@@ -44,5 +46,6 @@ def convert(model_name):
 
 
 if __name__ == "__main__":
+    convert('t2bal')
     convert('sre')
     convert('audio2_vox2')

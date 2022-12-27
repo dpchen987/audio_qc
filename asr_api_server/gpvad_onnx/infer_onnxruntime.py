@@ -7,8 +7,8 @@ import sklearn.preprocessing as pre
 import pickle
 import onnxruntime
 
-
-SAMPLE_RATE = 22050
+SAMPLE_RATE = 16000
+# SAMPLE_RATE = 22050
 EPS = np.spacing(1)
 LMS_ARGS = {
     'n_fft': 2048,
@@ -179,11 +179,13 @@ def extract_feature_mem(wav, sr):
 
 
 class GPVAD:
-    def __init__(self, model_name='a2_v2') -> None:
-        assert model_name in ['sre', 'a2_v2']
+    def __init__(self, model_name='t2bal') -> None:
+        assert model_name in ['sre', 'a2_v2', 't2bal']
         root_dir = os.path.dirname(os.path.abspath(__file__))
         if model_name == 'sre':
             model_path = os.path.join(root_dir, 'onnx_models/sre.onnx')
+        elif model_name == 't2bal':
+            model_path = os.path.join(root_dir, 'onnx_models/t2bal.onnx')
         else:
             model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2.onnx')
         if onnxruntime.get_device() == 'GPU':
@@ -195,7 +197,7 @@ class GPVAD:
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
         with open(encoder_path, 'rb') as f:
             self.encoder = pickle.load(f)
-        self.threshold = (0.3, 0.05)  # 更好的recall，论文推荐(0.5, 0.1)
+        self.threshold = (0.2, 0.01)  # 更好的recall，论文推荐(0.5, 0.1)
         self.speech_label_idx = np.where('Speech' == self.encoder.classes_)[0].squeeze()
         self.postprocessing_method = double_threshold
 
