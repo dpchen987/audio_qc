@@ -41,16 +41,18 @@ asr服务部署说明
   - **ASR_WS**：websocket server地址，默认值`''`；
   - **ASR_API_CONCURRENCY**：api并发请求数，默认值CPU 数的一半；
 
-- docker运行参数
+- docker运行：
   - 命令行：
 
     ```shell
-    $ docker run --net=host -e ASR_API_URL_DB=/app/url.db -e ASR_API_HOST=0.0.0.0 -e ASR_API_PORT=8300 -e ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302' -d --name asr_api_server --restart=always asr_api_server:0.6.6
+    $ docker run --net=host --gpus all -e ASR_API_URL_DB=/app/url.db -e ASR_API_HOST=0.0.0.0 -e ASR_API_PORT=8300 -e ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302' -d --name asr_api_server --restart=always asr_api_server:0.6.6
     ```
 
   - 参数说明：
   
     - `--net=host`：使用宿主机网络模式，使容器能够与宿主机共享网络。
+  
+    - `--gpus all`：指定容器使用所有可用的GPU。
   
     - `-e ASR_API_URL_DB=/app/url.db`：设置环境变量 `ASR_API_URL_DB` 为 `/app/url.db`，即 API URL 数据库的路径。
   
@@ -67,5 +69,5 @@ asr服务部署说明
     - `--name asr_api_server`：将容器命名为 `asr_api_server`。
   
     - `--restart=always`：设置容器随着 Docker 的启动而自动重启。
-  
+    
       
