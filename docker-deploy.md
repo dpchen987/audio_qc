@@ -25,7 +25,7 @@ asr服务部署说明
     - `-d`指定容器在后台运行。
     - `--name`指定容器的名称。
     - `-v`将主机的cuda目录挂载到容器中。
-    - `--gpus all`指定容器使用所有可用的GPU。
+    - `--gpus all`指定容器使用所有可用的GPU；指定第一个 GPU 运行，`--gpus device=0` 参数告诉 Docker 使用设备索引为 0 的 GPU 设备。
     - `-e`设置环境变量，例如服务端口等。
     - `--restart=always`设置容器随Docker自动重启。
 
@@ -45,14 +45,26 @@ asr服务部署说明
   - 命令行：
 
     ```shell
-    $ docker run --net=host --gpus all -e ASR_API_URL_DB=/app/url.db -e ASR_API_HOST=0.0.0.0 -e ASR_API_PORT=8300 -e ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302' -d --name asr_api_server --restart=always asr_api_server:0.6.6
+    docker run --net=host \
+      -d \
+      --gpus all \
+      -v /usr/local/cuda:/usr/local/cuda \
+      -e PATH=/usr/local/cuda/bin:$PATH \
+      -e LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
+      -e ASR_API_URL_DB=/app/url.db \
+      -e ASR_API_HOST=0.0.0.0 \
+      -e ASR_API_PORT=8400 \
+      -e ASR_WS=ws://127.0.0.1:8301 \
+      --name asr_api_server_01 \
+      --restart=always \
+      asr_api_server:0.6.6
     ```
-
+  
   - 参数说明：
   
     - `--net=host`：使用宿主机网络模式，使容器能够与宿主机共享网络。
   
-    - `--gpus all`：指定容器使用所有可用的GPU。
+    - `--gpus all`：指定容器使用所有可用的GPU；指定第一个 GPU 运行，`--gpus device=0` 参数告诉 Docker 使用设备索引为 0 的 GPU 设备。
   
     - `-e ASR_API_URL_DB=/app/url.db`：设置环境变量 `ASR_API_URL_DB` 为 `/app/url.db`，即 API URL 数据库的路径。
   
