@@ -16,19 +16,26 @@ asr服务部署说明
   - 命令行：
 
     ```shell
-    $ docker run --net=host -d --name asr_decoder_server -e ASR_WS_PORT=8301 -v /usr/local/cuda:/usr/local/cuda --gpus all --restart=always asr_decode_server:0.6.6
+    docker run --net=host \
+        -d \
+        -e ASR_WS_PORT=8301 \
+        --gpus all \
+        -v /usr/local/cuda:/usr/local/cuda \
+        --name asr_decoder_server \
+        --restart=always \
+        asr_decode_server:0.6.6
     ```
-
-  - 参数解释
-
-    - `--net=host`指定容器使用主机网络。
-    - `-d`指定容器在后台运行。
-    - `--name`指定容器的名称。
-    - `-v`将主机的cuda目录挂载到容器中。
-    - `--gpus all`指定容器使用所有可用的GPU；指定第一个 GPU 运行，`--gpus device=0` 参数告诉 Docker 使用设备索引为 0 的 GPU 设备。
-    - `-e`设置环境变量，例如服务端口等。
-    - `--restart=always`设置容器随Docker自动重启。
-
+  
+  - 参数说明：
+  
+    - `--net=host`：指定容器使用主机网络。
+    - `-d`：指定容器在后台运行。
+    - `--name`：指定容器的名称。
+    - `-v`：将主机的cuda目录挂载到容器中。
+    - `--gpus all`：指定容器使用所有可用的GPU；指定设备索引为 0 的 GPU 设备运行，`--gpus device=0` 。
+    - `-e`：设置环境变量，例如服务端口等。
+    - `--restart=always`：设置容器随Docker自动重启。
+  
   
 
 ## asr_api_server
@@ -38,7 +45,7 @@ asr服务部署说明
   - **ASR_API_URL_DB**：数据库的url，默认值`./db`；
   - **ASR_API_HOST**：api的ip地址，默认值`0.0.0.0`；
   - **ASR_API_PORT**：api的端口，默认值`8300`；
-  - **ASR_WS**：websocket server地址，默认值`''`；
+  - **ASR_WS**：WebSocket服务地址，默认值`''`；
   - **ASR_API_CONCURRENCY**：api并发请求数，默认值CPU 数的一半；
 
 - docker运行：
@@ -46,25 +53,25 @@ asr服务部署说明
 
     ```shell
     docker run --net=host \
-      -d \
-      --gpus all \
-      -v /usr/local/cuda:/usr/local/cuda \
-      -e PATH=/usr/local/cuda/bin:$PATH \
-      -e LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
-      -e ASR_API_URL_DB=/app/url.db \
-      -e ASR_API_HOST=0.0.0.0 \
-      -e ASR_API_PORT=8400 \
-      -e ASR_WS=ws://127.0.0.1:8301 \
-      --name asr_api_server_01 \
-      --restart=always \
-      asr_api_server:0.6.6
+        -d \
+        --gpus all \
+        -v /usr/local/cuda:/usr/local/cuda \
+        -e PATH=/usr/local/cuda/bin:$PATH \
+        -e LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
+        -e ASR_API_URL_DB=/app/url.db \
+        -e ASR_API_HOST=0.0.0.0 \
+        -e ASR_API_PORT=8300 \
+        -e ASR_WS=ws://127.0.0.1:8301 \
+        --name asr_api_server_01 \
+        --restart=always \
+        asr_api_server:0.6.6
     ```
   
   - 参数说明：
   
     - `--net=host`：使用宿主机网络模式，使容器能够与宿主机共享网络。
   
-    - `--gpus all`：指定容器使用所有可用的GPU；指定第一个 GPU 运行，`--gpus device=0` 参数告诉 Docker 使用设备索引为 0 的 GPU 设备。
+    - `--gpus all`：指定容器使用所有可用的GPU；指定设备索引为 0 的 GPU 设备运行，`--gpus device=0` 。
   
     - `-e ASR_API_URL_DB=/app/url.db`：设置环境变量 `ASR_API_URL_DB` 为 `/app/url.db`，即 API URL 数据库的路径。
   
@@ -72,9 +79,9 @@ asr服务部署说明
   
     - `-e ASR_API_PORT=8300`：设置环境变量 `ASR_API_PORT` 为 `8300`，即 API Server 的端口号。
   
-    - `-e ASR_WS=ws://127.0.0.1:8301`：设置环境变量 `ASR_WS` 为 `ws://127.0.0.1:8301`，即 Websocket Server 的地址，可设置多个`ASR_WS`地址。
+    - `-e ASR_WS=ws://127.0.0.1:8301`：设置环境变量 `ASR_WS` 为 `ws://127.0.0.1:8301`，即 Websocket Server 的地址；可设置多个`ASR_WS`地址，用`,\s `隔开,   如`-e ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302'`。
   
-    - `-v `：将主机上的 `/path-in-host/` 目录挂载到容器内的 `/app` 目录中。此处可以根据需求进行修改。
+    - `-v `：将主机的cuda目录挂载到容器中。
   
     - `-d`：在后台运行容器。
   
