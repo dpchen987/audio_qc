@@ -15,7 +15,6 @@ def auth(appkey):
 
 
 router = APIRouter()
-COUNTER = 0
 
 
 @router.get('/status')
@@ -35,24 +34,16 @@ async def recognize_file(
     }
     if not auth(query.appkey):
         return ASRResponse(**error)
-    global COUNTER
-    while COUNTER > config.CONF['concurrency']:
-        print(f'waiting in queque, cocurrency: {COUNTER}')
-        await asyncio.sleep(1)
-    COUNTER += 1
-    logger.info(f'=== concurrency: {COUNTER} ===')
     audio = await afile.read()
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
-        COUNTER -= 1
         return ASRResponse(**error)
     result = await asr_process.rec(audio)
     response = {
         'taskid': '123',
         'result': result,
     }
-    COUNTER -= 1
     return ASRResponse(**response)
 
 
@@ -68,24 +59,17 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     }
     if not auth(query.appkey):
         return ASRResponse(**error)
-    global COUNTER
-    while COUNTER > config.CONF['concurrency']:
-        print(f'waiting in queque, cocurrency: {COUNTER}')
-        await asyncio.sleep(1)
-    COUNTER += 1
     if query.audio_url:
         audio, msg = await asr_process.download(query.audio_url)
         if msg != 'ok':
             error['status'] = 4003
             error['message'] = msg
-            COUNTER -= 1
             return ASRResponse(**error)
     else:
         audio = await request.body()
     if not audio:
         error['status'] = 4002
         error['message'] = 'no audio data'
-        COUNTER -= 1
         return ASRResponse(**error)
     text, exception = await asr_process.rec(audio)
     response = {
@@ -98,7 +82,6 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if exception:
         response['status'] = 4004
         response['message'] = f'{exception} times of getting exception'
-    COUNTER -= 1
     return ASRResponse(**response)
 
 
