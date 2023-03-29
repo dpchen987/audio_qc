@@ -45,8 +45,10 @@ asr服务部署说明
   - **ASR_API_URL_DB**：数据库的url，默认值`./db`；
   - **ASR_API_HOST**：api的ip地址，默认值`0.0.0.0`；
   - **ASR_API_PORT**：api的端口，默认值`8300`；
-  - **ASR_WS**：WebSocket服务地址，默认值`''`；
+  - **ASR_WS**：WebSocket服务地址，可设置多个`ASR_WS`地址，用`,\s `隔开,   如`ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302`。默认值`''`；
   - **ASR_API_CONCURRENCY**：api并发请求数，默认值CPU 数的一半；
+  - **ASR_API_BACKEND**：ASR后端，可选`wenet`、`triton`，默认值`wenet`；
+  - **ASR_URL**：Triton服务地址，可设置多个`ASR_URL`地址，用`,\s `隔开,   如`ASR_URL='127.0.0.1:8001, 127.0.0.1:8002'`。默认值`''`；
 
 - docker运行：
   - 命令行：
@@ -62,31 +64,24 @@ asr服务部署说明
         -e ASR_API_HOST=0.0.0.0 \
         -e ASR_API_PORT=8300 \
         -e ASR_WS=ws://127.0.0.1:8301 \
-        --name asr_api_server_01 \
+        -e ASR_URL=127.0.0.1:8001 \
+        -e ASR_API_BACKEND=wenet \
+        --name asr_api_server \
         --restart=always \
-        asr_api_server:0.6.6
+        asr_api_server:0.6.7
     ```
   
   - 参数说明：
   
     - `--net=host`：使用宿主机网络模式，使容器能够与宿主机共享网络。
-  
     - `--gpus all`：指定容器使用所有可用的GPU；指定设备索引为 0 的 GPU 设备运行，`--gpus device=0` 。
-  
     - `-e ASR_API_URL_DB=/app/url.db`：设置环境变量 `ASR_API_URL_DB` 为 `/app/url.db`，即 API URL 数据库的路径。
-  
     - `-e ASR_API_HOST=0.0.0.0`：设置环境变量 `ASR_API_HOST` 为 `0.0.0.0`，即 API Server 的主机地址。
-  
     - `-e ASR_API_PORT=8300`：设置环境变量 `ASR_API_PORT` 为 `8300`，即 API Server 的端口号。
-  
     - `-e ASR_WS=ws://127.0.0.1:8301`：设置环境变量 `ASR_WS` 为 `ws://127.0.0.1:8301`，即 Websocket Server 的地址；可设置多个`ASR_WS`地址，用`,\s `隔开,   如`-e ASR_WS='ws://127.0.0.1:8301, ws://127.0.0.1:8302'`。
-  
     - `-v `：将主机的cuda目录挂载到容器中。
-  
     - `-d`：在后台运行容器。
-  
     - `--name asr_api_server`：将容器命名为 `asr_api_server`。
-  
     - `--restart=always`：设置容器随着 Docker 的启动而自动重启。
     
       

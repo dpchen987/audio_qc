@@ -10,6 +10,8 @@ docker run --net=host \
   -e ASR_API_HOST=0.0.0.0 \
   -e ASR_API_PORT=8400 \
   -e ASR_WS=ws://127.0.0.1:8301 \
+  -e ASR_URL=127.0.0.1:8001 \
+  -e ASR_API_BACKEND=wenet \
   --name asr_api_server \
   --restart=always \
   asr_api_server:$version
