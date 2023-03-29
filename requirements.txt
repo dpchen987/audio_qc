@@ -13,4 +13,5 @@ soxr==0.2.7
 librosa==0.8.1
 typing_extensions==4.2.0
 onnxruntime-gpu==1.14.1
-tritonclient==2.9.0
+protobuf==3.20.3
+tritonclient[all]==2.9.0
