@@ -90,16 +90,39 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
     response = {}
-    if audio_info.task_id and audio_info.file_path:
-        config.url_db.Put(audio_info.task_id.encode(), audio_info.file_path.encode())
+    # 传输类型判断
+    if audio_info.trans_type == 1 and audio_info.task_id and audio_info.file_path:
+        # 传输类型: url
+        config.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
         task = asyncio.create_task(speech_recognize(audio_info))
         # Add task to the set. This creates a strong reference.
         config.background_tasks.add(task)
         # To prevent keeping references to finished tasks forever,
-        # make each task remove its own reference from the set after
-        # completion:
+        # make each task remove its own reference from the set after completion:
         task.add_done_callback(config.background_tasks.discard)
         config.processing_set.add(audio_info.task_id)
+    elif audio_info.trans_type == 2 and audio_info.task_id and audio_info.file_path:
+        # 传输类型: bytes
+        if audio_info.file_content and audio_info.file_type in ('wav', 'opus'):
+            # file_name = audio_info.file_path.split('/')[-1]
+            # audio_info.file_path = config.file_dir + f'/{file_name}'
+            # if type(audio_info.file_content) == str: audio_info.file_content = audio_info.file_content.encode()
+            # file_content = base64.b64decode(audio_info.file_content)
+            # with open(audio_info.file_path, 'wb') as fin:
+            #     fin.write(file_content)
+            # 数据清空
+            # audio_info.file_content = 'processing'
+            config.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
+            task = asyncio.create_task(speech_recognize(audio_info))
+            # Add task to the set. This creates a strong reference.
+            config.background_tasks.add(task)
+            # To prevent keeping references to finished tasks forever,
+            # make each task remove its own reference from the set after completion:
+            task.add_done_callback(config.background_tasks.discard)
+            config.processing_set.add(audio_info.task_id)
+        else:
+            response['code'] = 4001
+            response['msg'] = 'no file_content or wrong file_type'
     else:
         response['code'] = 4001
         response['msg'] = 'no task_id or file_path'

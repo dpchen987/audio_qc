@@ -35,6 +35,9 @@ class AudioInfo(BaseModel):
     file_path: str = Field(..., description='文件路径', example="/data/audio/speech.pcm")
     callback_url: str = Field(..., description='回调地址', example="http://localhost:8305/asr/v1/callBack_test")
     # audio_format: str = Field('pcm', description="音频的格式", example="pcm/mp3")
+    file_content: str = Field(' ', description='文件内容', example='8408217dd0')
+    file_type: str = Field(..., description='文件类型', example="opus、wav")
+    trans_type: int = Field(..., description='传输类型，1-文件路径，2-文件内容', example='2')
 
 class CallBackParam(BaseModel):
     task_id: str = Field(..., description='长度为32的任务ID', example='87f5401c9347beae7cc392c408217dd0')

@@ -15,3 +15,4 @@ typing_extensions==4.2.0
 onnxruntime-gpu==1.14.1
 protobuf==3.20.3
 tritonclient[all]==2.9.0
+pybase64==1.2.3

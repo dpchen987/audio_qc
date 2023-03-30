@@ -6,6 +6,7 @@ import os
 import json
 import asyncio
 import aiohttp
+import base64
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server import config
@@ -20,20 +21,22 @@ async def asy_timer():
     初始API的CALLBACK_URL位空，有调用后CALLBACK_URL取回调url
     只补调一次
     '''
-    await asyncio.sleep(60)
+    await asyncio.sleep(600)
     global CALLBACK_URL
     logger.info("-----Regular inspection tasks execution ...-----")
     logger.info(f"CallBack url:{CALLBACK_URL}")
-    logger.info(f"tasks under processing: {config.processing_set}")
-    for task_id, audio_url in config.url_db.RangeIter():
+    # logger.info(f"tasks under processing: {config.processing_set}")
+    for task_id, inf_dict in config.url_db.RangeIter():
         if task_id.decode() not in config.processing_set and CALLBACK_URL:
-            audio_info = AudioInfo(
-                    task_id=task_id.decode(),
-                    file_path=audio_url.decode(), callback_url=CALLBACK_URL)
-            asyncio.create_task(speech_recognize(audio_info))
-            logger.info(f"Recreate task：-----{audio_info.task_id} ！！！----")
-            config.processing_set.add(audio_info.task_id)
-            config.url_db.Delete(audio_info.task_id.encode())
+            try:
+                audio_info = AudioInfo(**json.loads(inf_dict.decode()))
+                # audio_info.file_content = 'processed'
+                asyncio.create_task(speech_recognize(audio_info))
+                logger.info(f"Recreate task：-----{task_id.decode()} ！！！----")
+                config.processing_set.add(task_id.decode())
+                config.url_db.Delete(task_id)
+            except Exception as e:
+                logger.exception(f"asy_timer: {e}")
     asyncio.create_task(asy_timer())
 
 
@@ -49,7 +52,13 @@ async def speech_recognize(audio_info):
     try:
         async with ASR_NUM:
             # 音频下载
-            audio, msg = await asr_process.download(audio_info.file_path)
+            if audio_info.trans_type == 1:
+                audio, msg = await asr_process.download(audio_info.file_path)
+            else:
+                # with open(audio_info.file_path, 'rb') as f:
+                #     audio = f.read()
+                audio = base64.b64decode(audio_info.file_content)
+                if audio: msg = 'ok'
             if msg != 'ok':
                 Callback_param['code'] = 4003
                 Callback_param['err_msg'] = msg
@@ -71,6 +80,8 @@ async def speech_recognize(audio_info):
     finally:
         # 不管回调是否成功，都删除processing_set中的task
         config.processing_set.discard(audio_info.task_id)
+        # if audio_info.file_content == 'processed' and os.path.exists(audio_info.file_path):
+        #     os.remove(audio_info.file_path)
         try:
             # 回调接口调用
             logger.info(f"{Callback_param}")
@@ -80,6 +91,7 @@ async def speech_recognize(audio_info):
             resp_dt = json.loads(html)
             if resp_dt["code"] == 0:
                 # 识别完成，清理数据库
+                # if os.path.exists(audio_info.file_path): os.remove(audio_info.file_path)
                 config.url_db.Delete(audio_info.task_id.encode())
             else:
                 logger.info("回调失败！！")
