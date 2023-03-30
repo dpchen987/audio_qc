@@ -20,7 +20,7 @@ CONF = dict(
 
 def parse_env():
     global CONF
-    CONF['url_db'] = os.getenv('ASR_API_URL_DB', './db')
+    CONF['url_db'] = os.getenv('ASR_API_URL_DB', CONF['url_db'])
     if not CONF['url_db']:
         raise ValueError('environmente ASR_API_URL_DB must be set!!!')
     CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])
