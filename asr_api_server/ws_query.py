@@ -13,10 +13,7 @@ TRITON_FLAGS = {
     'verbose': False,
     'model_name': 'infer_pipeline',
 }
-triton_client = grpcclient.InferenceServerClient(
-    url=config.get_url(),
-    verbose=TRITON_FLAGS['verbose']
-)
+
 WS_START = json.dumps({
     'signal': 'start',
     'nbest': 1,
@@ -52,6 +49,11 @@ async def triton_rec(data: bytes) -> str:
     samples = np.frombuffer(data, dtype='int16')
     samples = np.array([samples], dtype=np.float32)
     lengths = np.array([[len(samples)]], dtype=np.int32)
+
+    triton_client = grpcclient.InferenceServerClient(
+        url=config.get_url(),
+        verbose=TRITON_FLAGS['verbose']
+    )
 
     protocol_client = grpcclient
     inputs = [

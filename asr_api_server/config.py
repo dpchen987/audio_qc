@@ -43,7 +43,6 @@ def parse_env():
         print('websocket_server:', CONF['ws'])
         print('***' * 10)
     if url:
-        print(url, type(url))
         url = re.split(r'[,\s]+', url)
         for u in url:
             if not re.search(r':\d+', u):
