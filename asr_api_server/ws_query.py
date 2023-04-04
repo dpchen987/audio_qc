@@ -1,10 +1,9 @@
-import asyncio
 import json
 import websockets
 from asr_api_server import config
 from asr_api_server.logger import logger
 import time
-import tritonclient.grpc as grpcclient
+import tritonclient.grpc.aio as grpcclient
 from tritonclient.utils import np_to_triton_dtype
 import numpy as np
 
@@ -50,10 +49,6 @@ async def triton_rec(data: bytes) -> str:
     samples = np.array([samples], dtype=np.float32)
     lengths = np.array([[len(samples)]], dtype=np.int32)
 
-    triton_client = grpcclient.InferenceServerClient(
-        url=config.get_url(),
-        verbose=TRITON_FLAGS['verbose']
-    )
 
     protocol_client = grpcclient
     inputs = [
@@ -69,7 +64,11 @@ async def triton_rec(data: bytes) -> str:
     outputs = [protocol_client.InferRequestedOutput("TRANSCRIPTS")]
     sequence_id = 10086
 
-    response = triton_client.infer(
+    triton_client = grpcclient.InferenceServerClient(
+        url=config.get_url(),
+        verbose=TRITON_FLAGS['verbose']
+    )
+    response = await triton_client.infer(
         TRITON_FLAGS['model_name'],
         inputs,
         request_id=str(sequence_id),

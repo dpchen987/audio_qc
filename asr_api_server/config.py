@@ -31,7 +31,7 @@ def parse_env():
     assert CONF['backend'] != 'wenet' or CONF[
         'backend'] != 'triton', f'invalid backend, input `triton` or `wenet`, your value {CONF["backend"]}'
     print('***' * 10)
-    print('decode backend:', CONF['backend'])
+    print('ASR_API_BACKEND:', CONF['backend'])
     print('***' * 10)
     if ws:
         ws = re.split(r'[,\s]+', ws)
