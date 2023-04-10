@@ -88,7 +88,8 @@ async def speech_recognize(audio_info):
         try:
             # 回调接口调用
             logger.info(f"{Callback_param}")
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=300)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(url=audio_info.callback_url, data=json.dumps(Callback_param, ensure_ascii=False), headers={'content-type': 'application/json'}) as resp:
                     html = await resp.text()
             end = time.time()
