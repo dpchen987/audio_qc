@@ -1,6 +1,8 @@
 # encoding: utf8
 import os
 import asyncio
+import time
+
 from fastapi import APIRouter, Body
 from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
@@ -142,4 +144,5 @@ async def callback_test(callback_para: CallBackParam = Body(..., title="音频�
         logger.info(f"{callback_para.err_msg=}")
         CALLBACK_COUNTER += 1
         print('============= ', f'{CALLBACK_COUNTER = }')
+    time.sleep(65)
     return response

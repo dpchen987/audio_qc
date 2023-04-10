@@ -31,7 +31,7 @@ def parse_env():
     assert CONF['backend'] != 'wenet' or CONF[
         'backend'] != 'triton', f'invalid backend, input `triton` or `wenet`, your value {CONF["backend"]}'
     print('***' * 10)
-    print('decode backend:', CONF['backend'])
+    print('ASR_API_BACKEND:', CONF['backend'])
     print('***' * 10)
     if ws:
         ws = re.split(r'[,\s]+', ws)
@@ -43,7 +43,6 @@ def parse_env():
         print('websocket_server:', CONF['ws'])
         print('***' * 10)
     if url:
-        print(url, type(url))
         url = re.split(r'[,\s]+', url)
         for u in url:
             if not re.search(r':\d+', u):

@@ -3,6 +3,7 @@
 
 
 import os
+import time
 import json
 import asyncio
 import aiohttp
@@ -82,20 +83,26 @@ async def speech_recognize(audio_info):
         config.processing_set.discard(audio_info.task_id)
         # if audio_info.file_content == 'processed' and os.path.exists(audio_info.file_path):
         #     os.remove(audio_info.file_path)
+        html = 'default'
+        begin = time.time()
         try:
             # 回调接口调用
             logger.info(f"{Callback_param}")
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=300)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(url=audio_info.callback_url, data=json.dumps(Callback_param, ensure_ascii=False), headers={'content-type': 'application/json'}) as resp:
                     html = await resp.text()
+            end = time.time()
+            logger.info(f"CallBack time cost: {end-begin}")
             resp_dt = json.loads(html)
             if resp_dt["code"] == 0:
                 # 识别完成，清理数据库
                 # if os.path.exists(audio_info.file_path): os.remove(audio_info.file_path)
                 config.url_db.Delete(audio_info.task_id.encode())
             else:
-                logger.info("回调失败！！")
-                logger.info(f"{resp_dt}")
+                logger.info(f"回调失败！！{resp_dt}")
+                logger.info(f"{html}")
         except Exception as e:
-            logger.info("回调失败！！")
+            end = time.time()
+            logger.info(f"回调失败！！time cost: {end-begin}, get response: {html}")
             logger.exception(e)
