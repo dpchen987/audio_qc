@@ -59,7 +59,7 @@ async def speech_recognize(audio_info):
                 # with open(audio_info.file_path, 'rb') as f:
                 #     audio = f.read()
                 audio = base64.b64decode(audio_info.file_content)
-                if audio: msg = 'ok'
+                msg = 'ok' if audio else 'audio file is empty !!!'
             if msg != 'ok':
                 Callback_param['code'] = 4003
                 Callback_param['err_msg'] = msg
