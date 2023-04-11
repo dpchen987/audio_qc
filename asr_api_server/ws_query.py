@@ -31,6 +31,7 @@ async def ws_rec(data):
                 texts = await triton_rec(data)
             elif config.CONF['backend'] == 'wenet':
                 texts = await ws_rec_wenet(data)
+            break
         except Exception as e:
             logger.debug(e)
             time.sleep(3)
