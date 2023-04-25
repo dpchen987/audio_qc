@@ -28,13 +28,23 @@ def parse(fn_client, fn_callback):
     callback = read_callback(fn_callback)
     task_times = []
     failed = set()
+    all_begin = time.time()
+    all_end = 0
     for c in client:
         taskid = c['taskid']
         if taskid not in callback:
             failed.add(taskid)
             continue
+        if c['begin'] < all_begin:
+            all_begin = c['begin']
+        if callback[taskid] > all_end:
+            all_end = callback[taskid]
         past = callback[taskid] - c['begin']
         task_times.append(past)
+    duration = len(task_times) * 60  # 60s per audio
+    cost = all_end - all_begin
+    print('RTF:', cost/duration)
+    print('spped:', duration/cost)
     print('mean: ', statistics.mean(task_times))
     print('median:', statistics.median(task_times))
     print('max_time:', max(task_times))
