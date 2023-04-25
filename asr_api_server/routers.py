@@ -139,10 +139,9 @@ async def callback_test(callback_para: CallBackParam = Body(..., title="音频�
     global CALLBACK_COUNTER
     response = {}
     if callback_para.task_id:
-        logger.info(f"{callback_para.task_id}:回调成功！")
-        response['code'] = 0
-        logger.info(f"{callback_para.err_msg=}")
         CALLBACK_COUNTER += 1
-        print('============= ', f'{CALLBACK_COUNTER = }')
-    time.sleep(65)
+        logger.info(f"{CALLBACK_COUNTER} {repr(callback_para.dict())}:回调成功！")
+        response['code'] = 0
+        # logger.info(f"{callback_para.err_msg=}")
+        # print('============= ', f'{CALLBACK_COUNTER = }')
     return response
