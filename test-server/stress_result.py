@@ -45,12 +45,12 @@ def parse(fn_client, fn_callback):
     duration = len(task_times) * 60  # 60s per audio
     cost = all_end - all_begin
     print('failed:', len(failed), failed)
-    print('RTF:', cost/duration)
-    print('spped:', duration/cost)
-    print('mean: ', statistics.mean(task_times))
-    print('median:', statistics.median(task_times))
-    print('max_time:', max(task_times))
-    print('min_time:', min(task_times))
+    print('RTF:', round(cost/duration, 5))
+    print('spped:', round(duration/cost, 3))
+    print('mean: ', round(statistics.mean(task_times), 3))
+    print('median:', round(statistics.median(task_times), 3))
+    print('max_time:', round(max(task_times), 3))
+    print('min_time:', round(min(task_times), 3))
 
 
 if __name__ == '__main__':
