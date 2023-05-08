@@ -8,9 +8,11 @@ import statistics
 
 def read_callback(fn_callback):
     result = {}
+    error_dt = {}
     with open(fn_callback) as f:
         for line in f:
             m = re.findall(r"'task_id': '(.*?)'", line)
+            m_e = re.findall(r"'code': (\d+)", line)
             if not m:
                 continue
             task_id = m[0]
@@ -19,7 +21,8 @@ def read_callback(fn_callback):
             tm = time.strptime(ts, '%Y-%m-%d %H:%M:%S')
             t = time.mktime(tm)
             result[task_id] = t + int(ms)/1000
-    return result
+            if m_e[0] != '0': error_dt[task_id] = m_e[0]
+    return result, error_dt
 
 
 def parse_sys_log(fn, process=['asr_api_server', 'tritonserver']):
@@ -58,7 +61,7 @@ def parse_sys_log(fn, process=['asr_api_server', 'tritonserver']):
 def parse(fn_client, fn_callback):
     with open(fn_client) as f:
         client = json.load(f)
-    callback = read_callback(fn_callback)
+    callback, error_dt = read_callback(fn_callback)
     task_times = []
     failed = set()
     all_begin = time.time()
@@ -66,7 +69,7 @@ def parse(fn_client, fn_callback):
     for c in client:
         taskid = c['taskid']
         if taskid not in callback:
-            print('no callback result for', taskid)
+            # print('no callback result for', taskid)
             failed.add(taskid)
             continue
         if c['begin'] < all_begin:
@@ -78,6 +81,7 @@ def parse(fn_client, fn_callback):
     duration = len(task_times) * 60  # 60s per audio
     cost = all_end - all_begin
     print('failed:', len(failed), failed)
+    print('errors:', len(error_dt), error_dt)
     print('RTF:', round(cost/duration, 5))
     print('spped:', round(duration/cost, 3))
     print('mean: ', round(statistics.mean(task_times), 3))
