@@ -62,7 +62,7 @@ async def recognize(request: Request, query: ASRHeaer = Depends()):
     if not auth(query.appkey):
         return ASRResponse(**error)
     if query.audio_url:
-        audio, msg = await asr_process.download(query.audio_url)
+        audio, msg = await asr_process.download(query.audio_url, timeout_sec=config.CONF['download_timeout'], max_attempts=3)
         if msg != 'ok':
             error['status'] = 4003
             error['message'] = msg

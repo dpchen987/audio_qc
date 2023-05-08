@@ -14,7 +14,8 @@ CONF = dict(
     url_db='./db',  # must be set as environmente
     concurrency=10,
     backend='wenet',  # 'triton' or 'wenet'
-    url=['127.0.0.1:8001']  # triton-GRPCInferenceService
+    url=['127.0.0.1:8001'],  # triton-GRPCInferenceService
+    download_timeout=20,  # audio download timeout seconds
 )
 
 
@@ -26,6 +27,7 @@ def parse_env():
     CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])
     CONF['port'] = int(os.getenv('ASR_API_PORT', CONF['port']))
     CONF['backend'] = os.getenv('ASR_API_BACKEND', CONF['backend'])
+    CONF['download_timeout'] = os.getenv('DOWNLOAD_TIMEOUT', CONF['download_timeout'])
     ws = os.getenv('ASR_WS', '')
     url = os.getenv('ASR_URL', '')
     assert CONF['backend'] != 'wenet' or CONF[

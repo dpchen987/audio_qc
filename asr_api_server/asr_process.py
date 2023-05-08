@@ -13,21 +13,24 @@ from .easytimer import Timer
 eztimer = Timer(logger)
 if os.environ.get('ASR_VAD_WEBRTC'):
     from asr_api_server.vad_webrtc import vad
-    print('==='*20)
+
+    print('===' * 20)
     print('Using ASR_VAD_WEBRTC ...')
-    print('==='*20)
+    print('===' * 20)
 else:
     from asr_api_server.vad_gpvad import vad
-    print('==='*20)
+
+    print('===' * 20)
     print('Using ASR_VAD_GPVAD ...')
-    print('==='*20)
+    print('===' * 20)
 model_dir = os.environ.get('ASR_LOCAL_MODEL')
 if model_dir:
     asr_type = 'local'
     from .recognize_onnx import AsrOnnx
-    print('==='*20)
+
+    print('===' * 20)
     print('Using LOCAL MODEL:', model_dir)
-    print('==='*20)
+    print('===' * 20)
     asronnx = AsrOnnx(model_dir)
 else:
     asr_type = 'ws'
@@ -40,23 +43,34 @@ else:
         from asr_api_server.ws_query import ws_rec
 
 
-async def download(url):
+async def download(url, timeout_sec: int = 80, max_attempts: int = 3):
     b = time.time()
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=80) as resp:
-                if resp.status == 200:
-                    data = await resp.read()
-                    msg = 'ok'
-                else:
-                    data = b''
-                    msg = f'download {url} failed with status: {resp.status}'
-    except Exception as e:
-        logger.exception(e)
-        data = b''
-        msg = 'download audio url failed with exception: {}'.format(e)
+    attempt = 1
+    download_success = False
+    while attempt <= max_attempts:
+        attempt_start_time = time.time()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=timeout_sec) as resp:
+                    if resp.status == 200:
+                        data = await resp.read()
+                        msg = 'ok'
+                        download_success = True
+                        break
+                    else:
+                        data = b''
+                        msg = f'Try {attempt} time download {url} failed with status: {resp.status}'
+        except Exception as e:
+            logger.exception(e)
+            data = b''
+            msg = f'download audio url failed with exception: {repr(e)}'
+        attempt_cost_time = time.time() - attempt_start_time
+        logger.debug(
+            f"Try {attempt} Attempt || Attempt Download Cost Time: {attempt_cost_time}s || Download Success: {download_success}　||　Download URL: {url}")
+        attempt += 1
     time_cost = time.time() - b
-    logger.debug(f'{time_cost = } for downloading :{url}')
+    logger.debug(
+        f'Finish Download || Download Cost Time: {time_cost}s || Download Success: {download_success} || Download Total Attempts: {attempt if attempt == 1 else attempt - 1} || Download URL: {url}')
     return data, msg
 
 
@@ -89,7 +103,7 @@ def rec_vad_local(audio_origin):
 async def rec_vad_ws(audio_origin):
     b = time.time()
     segments, duration, samplerate = vad(audio_origin)
-    logger.info(f'vad time: {time.time()-b}, {duration=}, {len(segments) = }')
+    logger.info(f'vad time: {time.time() - b}, {duration=}, {len(segments) = }')
     max_len = 0
     tasks = []
     for s in segments:
