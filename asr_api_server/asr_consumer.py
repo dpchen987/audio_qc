@@ -46,6 +46,7 @@ async def speech_recognize(audio_info):
     '''
     global CALLBACK_URL
     global ASR_NUM
+    logger.info(f"task: {audio_info.task_id} enter Coroutine !-!")
     if ASR_NUM is None:
         ASR_NUM = asyncio.Semaphore(config.CONF['concurrency'])
     Callback_param = {"task_id": audio_info.task_id, "code":0, "content": '', "err_msg":"success"}

@@ -93,6 +93,7 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     '''
     response = {}
     # 传输类型判断
+    logger.info(f"task: {audio_info.task_id} enter api !-!")
     if audio_info.trans_type == 1 and audio_info.task_id and audio_info.file_path:
         # 传输类型: url
         config.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
