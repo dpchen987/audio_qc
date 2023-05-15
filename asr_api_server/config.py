@@ -16,11 +16,13 @@ CONF = dict(
     backend='wenet',  # 'triton' or 'wenet'
     url=['127.0.0.1:8001'],  # triton-GRPCInferenceService
     download_timeout=20,  # audio download timeout seconds
+    vad_max=0,
 )
 
 
 def parse_env():
     global CONF
+    CONF['vad_max'] = int(os.getenv('ASR_VAD_MAX', CONF['vad_max']))
     CONF['url_db'] = os.getenv('ASR_API_URL_DB', CONF['url_db'])
     if not CONF['url_db']:
         raise ValueError('environmente ASR_API_URL_DB must be set!!!')

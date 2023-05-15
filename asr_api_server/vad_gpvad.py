@@ -3,6 +3,7 @@ import soundfile as sf
 import numpy as np
 from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
 from asr_api_server.logger import logger
+from asr_api_server import config
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
 VAD = GPVAD()
@@ -34,6 +35,28 @@ def cut(timeline, data, samplerate):
     return segments
 
 
+def cut_to_max(segments, samplerate):
+    vad_max = config.CONF['vad_max']
+    max_len = int(vad_max * samplerate)
+    new = []
+    for s in segments:
+        if len(s) < max_len:
+            new.append(s)
+            continue
+        count = len(s) // max_len
+        if len(s) % max_len:
+            count += 1
+        step = len(s) // count
+        if len(s) % count:
+            step += 1
+        for i in range(count):
+            begin = i * step
+            end = begin + step
+            n = s[begin:end]
+            new.append(n)
+    return new
+
+
 def vad(audio):
     bio = BytesIO(audio)
     timeline = VAD.vad(bio)
@@ -41,6 +64,10 @@ def vad(audio):
     data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
     segments = cut(timeline, data, samplerate)
+    if config.CONF['vad_max']:
+        logger.info("-- before cut_to_max(), {len(segments) = }, {config.CONF['vad_max'] = }")
+        segments = cut_to_max(segments, samplerate)
+        logger.info("== after cut_to_max(), {len(segments) = }, {config.CONF['vad_max'] = }")
     return segments, duration, samplerate
 
 
@@ -49,6 +76,6 @@ if __name__ == '__main__':
     fp = sys.argv[1]
     data = open(fp, 'rb').read()
     s, d, sr = vad(data)
-    print(s, d, sr)
+    print(len(s), d, sr)
     for i, x in enumerate(s):
         sf.write(f'{i}.wav', x, sr)
