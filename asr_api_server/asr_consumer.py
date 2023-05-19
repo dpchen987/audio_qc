@@ -80,10 +80,6 @@ async def speech_recognize(audio_info):
         Callback_param['code'] = 4000
         Callback_param['err_msg'] = str(e)
     finally:
-        # 不管回调是否成功，都删除processing_set中的task
-        config.processing_set.discard(audio_info.task_id)
-        # if audio_info.file_content == 'processed' and os.path.exists(audio_info.file_path):
-        #     os.remove(audio_info.file_path)
         html = 'default'
         begin = time.time()
         try:
@@ -107,3 +103,6 @@ async def speech_recognize(audio_info):
             end = time.time()
             logger.info(f"回调失败！！time cost: {end-begin}, get response: {html}")
             logger.exception(e)
+        finally:
+            # 不管回调是否成功，都删除processing_set中的task
+            config.processing_set.discard(audio_info.task_id)
