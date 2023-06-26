@@ -1,0 +1,23 @@
+#!/bin/bash
+
+MODEL_REPOSITORY=${MODEL_REPOSITORY:="/workspace/model_repo_paraformer_large_offline"}
+PINNED_MEMORY_POOL_BYTE_SIZE=${PINNED_MEMORY_POOL_BYTE_SIZE:=512000000}
+CUDA_MEMORY_POOL_BYTE_SIZE=${CUDA_MEMORY_POOL_BYTE_SIZE:="0:1024000000"}
+GRPC_PORT=${GRPC_PORT:=8001}
+METRICS_PORT=${METRICS_PORT:=8002}
+HTTP_PORT=${HTTP_PORT:=8301}
+
+echo "MODEL_REPOSITORY: $MODEL_REPOSITORY"
+echo "PINNED_MEMORY_POOL_BYTE_SIZE: $PINNED_MEMORY_POOL_BYTE_SIZE"
+echo "CUDA_MEMORY_POOL_BYTE_SIZE: $CUDA_MEMORY_POOL_BYTE_SIZE"
+echo "GRPC_PORT: $GRPC_PORT"
+echo "METRICS_PORT: $METRICS_PORT"
+echo "HTTP_PORT: $HTTP_PORT"
+#/bin/bash
+/opt/tritonserver/bin/tritonserver --model-repository "$MODEL_REPOSITORY" \
+             --pinned-memory-pool-byte-size=$PINNED_MEMORY_POOL_BYTE_SIZE \
+             --cuda-memory-pool-byte-size="$CUDA_MEMORY_POOL_BYTE_SIZE" \
+             --grpc-port $GRPC_PORT \
+             --metrics-port $METRICS_PORT \
+             --http-port $HTTP_PORT
+

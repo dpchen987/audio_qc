@@ -9,6 +9,7 @@ from io import BytesIO
 import soundfile as sf
 from .logger import logger
 from .easytimer import Timer
+from .config import CONF
 
 eztimer = Timer(logger)
 if os.environ.get('ASR_VAD_WEBRTC'):
@@ -66,11 +67,11 @@ async def download(url, timeout_sec: int = 80, max_attempts: int = 3):
             msg = f'download audio url failed with exception: {repr(e)}'
         attempt_cost_time = time.time() - attempt_start_time
         logger.debug(
-            f"Try {attempt} Attempt || Attempt Download Cost Time: {attempt_cost_time}s || Download Success: {download_success}　||　Download URL: {url}")
+            f"Try {attempt} Attempt || Attempt Download Cost Time(s): {attempt_cost_time} || Download Success: {download_success}　||　Download URL: {url}")
         attempt += 1
     time_cost = time.time() - b
     logger.debug(
-        f'Finish Download || Download Cost Time: {time_cost}s || Download Success: {download_success} || Download Total Attempts: {attempt if attempt == 1 else attempt - 1} || Download URL: {url}')
+        f'Finish Download || Download Cost Time(s): {time_cost} || Download Success: {download_success} || Download Total Attempts: {attempt if attempt == 1 else attempt - 1} || Download URL: {url}')
     return data, msg
 
 
@@ -87,8 +88,8 @@ async def rec_no_vad(audio_origin):
         text = ''
         exception = 1
     timing = time.time() - b
-    logger.info(f'REC without VAD: time use:{timing}, {exception=}')
     text = re.sub(r'<.*?>', '', text)
+    logger.info(f'REC without VAD. || REC Cost Time(s): {timing} || Exception: {exception} || Text: {text}')
     return text, exception
 
 
@@ -160,8 +161,11 @@ async def rec_vad_ws_batch(audio_origin):
 
 
 async def rec(audio_origin):
-    if asr_type == 'local':
-        return rec_vad_local(audio_origin)
-    if asr_type == 'ws_batch':
-        return await rec_vad_ws_batch(audio_origin)
-    return await rec_vad_ws(audio_origin)
+    if CONF['use_vad']:
+        if asr_type == 'local':
+            return rec_vad_local(audio_origin)
+        if asr_type == 'ws_batch':
+            return await rec_vad_ws_batch(audio_origin)
+        return await rec_vad_ws(audio_origin)
+    else:
+        return await rec_no_vad(audio_origin)

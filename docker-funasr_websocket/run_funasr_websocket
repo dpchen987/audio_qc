@@ -1,0 +1,41 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=/workspace:$LD_LIBRARY_PATH
+
+MODEL_DIR=${MODEL_DIR:="/workspace/models/asr"}
+QUANTIZE=${QUANTIZE:="true"}
+VAD_DIR=${VAD_DIR:="/workspace/models/vad"}
+VAD_QUANT=${VAD_QUANT:="true"}
+PUNC_DIR=${PUNC_DIR:="/workspace/models/punc"}
+PUNC_QUANT=${PUNC_QUANT:="true"}
+DECODER_THREAD_NUM=${DECODER_THREAD_NUM:=8}
+IO_THREAD_NUM=${IO_THREAD_NUM:=8}
+PORT=${PORT:=10095}
+CERTFILE=${CERTFILE:="./server.crt"}
+KEYFILE=${KEYFILE:="./server.key"}
+
+echo "MODEL_DIR: $MODEL_DIR"
+echo "QUANTIZE: $QUANTIZE"
+echo "VAD_DIR: $VAD_DIR"
+echo "VAD_QUANT: $VAD_QUANT"
+echo "PUNC_DIR: $PUNC_DIR"
+echo "PUNC_QUANT: $PUNC_QUANT"
+echo "DECODER_THREAD_NUM: $DECODER_THREAD_NUM"
+echo "IO_THREAD_NUM: $IO_THREAD_NUM"
+echo "PORT: $PORT"
+echo "CERTFILE: $CERTFILE"
+echo "KEYFILE: $KEYFILE"
+
+./funasr-wss-server \
+  --model-dir $MODEL_DIR \
+  --quantize $QUANTIZE \
+  --vad-dir $VAD_DIR \
+  --vad-quant $VAD_QUANT \
+  --punc-dir $PUNC_DIR \
+  --punc-quant $PUNC_QUANT \
+  --decoder_thread_num $DECODER_THREAD_NUM \
+  --io_thread_num $IO_THREAD_NUM \
+  --port $PORT \
+  --certfile $CERTFILE \
+  --keyfile $KEYFILE
+

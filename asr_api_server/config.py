@@ -10,12 +10,13 @@ import leveldb
 CONF = dict(
     host='0.0.0.0',
     port=8300,
-    ws=['ws://127.0.0.1:8301'],
     url_db='./db',  # must be set as environmente
     concurrency=10,
-    backend='wenet',  # 'triton' or 'wenet'
-    url=['127.0.0.1:8001'],  # triton-GRPCInferenceService
+    decoder_server='funasr_websocket',  # `wenet_websocket` or `funasr_triton` or `funasr_websocket`
+    # example: wenet_websocket_uri=['ws://127.0.0.1:8301'], funasr_triton_uri=['127.0.0.1:8001'], funasr_websocket_uri=['127.0.0.1:10095']
+    decoder_server_uri=['127.0.0.1:10095'],
     download_timeout=20,  # audio download timeout seconds
+    use_vad='True', # whether use local vad
     vad_max=0,
 )
 
@@ -28,33 +29,31 @@ def parse_env():
         raise ValueError('environmente ASR_API_URL_DB must be set!!!')
     CONF['host'] = os.getenv('ASR_API_HOST', CONF['host'])
     CONF['port'] = int(os.getenv('ASR_API_PORT', CONF['port']))
-    CONF['backend'] = os.getenv('ASR_API_BACKEND', CONF['backend'])
+    CONF['decoder_server'] = os.getenv('ASR_DECODER_SERVER', CONF['decoder_server']).lower()
+    CONF['decoder_server_uri'] = os.getenv('ASR_DECODER_SERVER_URI', CONF['decoder_server_uri'])
     CONF['download_timeout'] = os.getenv('DOWNLOAD_TIMEOUT', CONF['download_timeout'])
-    ws = os.getenv('ASR_WS', '')
-    url = os.getenv('ASR_URL', '')
-    assert CONF['backend'] != 'wenet' or CONF[
-        'backend'] != 'triton', f'invalid backend, input `triton` or `wenet`, your value {CONF["backend"]}'
-    print('***' * 10)
-    print('ASR_API_BACKEND:', CONF['backend'])
-    print('***' * 10)
-    if ws:
-        ws = re.split(r'[,\s]+', ws)
-        for w in ws:
-            if not re.search(r':\d+', w):
-                raise ValueError(f'invalid WS address {w}')
-        CONF['ws'] = ws
-        print('***' * 10)
-        print('websocket_server:', CONF['ws'])
-        print('***' * 10)
-    if url:
-        url = re.split(r'[,\s]+', url)
-        for u in url:
-            if not re.search(r':\d+', u):
-                raise ValueError(f'invalid ASR_URL address {u}')
-        CONF['url'] = url
-        print('***' * 10)
-        print('triton server url:', CONF['url'])
-        print('***' * 10)
+    CONF['use_vad'] = bool(os.getenv('USE_VAD', CONF['use_vad']).lower() == 'true')
+    assert CONF['decoder_server'] in ['wenet_websocket', 'funasr_triton', 'funasr_websocket'], \
+        f'Invalid ASR_DECODER_SERVER: `{CONF["decoder_server"]}`, please input `wenet_websocket`, `funasr_triton` or `funasr_websocket`.'
+
+    print('*' * 66)
+    print(f"ASR API URI: {CONF['host']}:{CONF['port']}")
+    print('-' * 66)
+    print(f"ASR Decoder Server: {CONF['decoder_server']}")
+    print('-' * 66)
+    print(f"ASR Use VAD: {CONF['use_vad']}")
+    print('-' * 66)
+
+    # check decoder_server_uri
+    decoder_server_uri = os.getenv('ASR_DECODER_SERVER_URI', '')
+    if decoder_server_uri:
+        uris = re.split(r'[,\s]+', decoder_server_uri)
+        for uri in uris:
+            if not re.search(r':\d+', uri):
+                raise ValueError(f'Invalid decoder server uri {uri}.')
+        CONF['decoder_server_uri'] = uris
+    print(f"ASR Decoder Server URI: {CONF['decoder_server_uri']}")
+    print('*' * 66)
 
     concur = os.getenv('ASR_API_CONCURRENCY', int(os.cpu_count() / 2))
     CONF['concurrency'] = int(concur)
@@ -64,23 +63,16 @@ parse_env()
 WS_INDEX = 0
 URL_INDEX = 0
 
-
-def get_ws():
-    global WS_INDEX
-    if len(CONF['ws']) == 1:
-        return CONF['ws'][0]
-    idx = WS_INDEX % len(CONF['ws'])
-    WS_INDEX = idx + 1
-    return CONF['ws'][idx]
+DECODER_SERVER_INDEX = 0
 
 
-def get_url():
-    global URL_INDEX
-    if len(CONF['url']) == 1:
-        return CONF['url'][0]
-    idx = URL_INDEX % len(CONF['url'])
-    URL_INDEX = idx + 1
-    return CONF['url'][idx]
+def get_decoder_server_uri():
+    global DECODER_SERVER_INDEX
+    if len(CONF['decoder_server_uri']) == 1:
+        return CONF['decoder_server_uri'][0]
+    idx = DECODER_SERVER_INDEX % len(CONF['decoder_server_uri'])
+    DECODER_SERVER_INDEX = idx + 1
+    return CONF['decoder_server_uri'][idx]
 
 
 url_db = leveldb.LevelDB(CONF['url_db'])

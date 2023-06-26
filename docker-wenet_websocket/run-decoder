@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:$LD_LIBRARY_PATH:.
+export GLOG_logtostderr=${GLOG_logtostderr:=1}
+export GLOG_v=${GLOG_v:=2}
+ASR_WS_PORT=${ASR_WS_PORT:=8301}
+ASR_WS_CHUNK_SIZE=${ASR_WS_CHUNK_SIZE:=-1}
+ASR_WS_CONTEXT_SCORE=${ASR_WS_CONTEXT_SCORE:=8}
+echo "GLOG_logtostderr: $GLOG_logtostderr"
+echo "GLOG_v: $GLOG_v"
+echo "ASR_WS_PORT: $ASR_WS_PORT"
+echo "ASR_WS_CHUNK_SIZE: $ASR_WS_CHUNK_SIZE"
+echo "ASR_WS_CONTEXT_SCORE: $ASR_WS_CONTEXT_SCORE"
+model_dir=./models
+./websocket_server_main \
+    --port $ASR_WS_PORT \
+    --chunk_size $ASR_WS_CHUNK_SIZE \
+    --context_score $ASR_WS_CONTEXT_SCORE \
+    --context_path $model_dir/hotext.txt \
+    --model_path $model_dir/final.zip \
+    --unit_path $model_dir/units.txt 2>&1 | tee server.log
