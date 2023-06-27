@@ -28,7 +28,7 @@ docker run --net=host \
   -e VAD_QUANT=true \
   -e PUNC_DIR=$punc_dir \
   -e PUNC_QUANT=true \
-  -e PORT=10066 \
+  -e PORT=10095 \
   -e DECODER_THREAD_NUM=8 \
   -e IO_THREAD_NUM=8 \
   --name funasr_websocket_server \
@@ -46,7 +46,7 @@ docker run --net=host \
 - PUNC_QUANT <string>：默认值true, load the model of model.onnx in punc_dir. If set true, load the model of model_quant.onnx in punc_dir
 - DECODER_THREAD_NUM <int>： 默认值8，number of threads for decoder；
 - IO_THREAD_NUM <int>：默认值8，number of threads for network io；
-- PORT <int>： 默认值8889，监听端口；
+- PORT <int>： 默认值10095，监听端口；
 - CERTFILE <string>：默认值./server.crt, path of certficate for WSS connection. if it is empty, it will be in WS mode.
 - KEYFILE <string>：默认值./server.key, path of keyfile for WSS connection
 
