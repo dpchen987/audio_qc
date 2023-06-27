@@ -7,12 +7,14 @@ Service with websocket-cpp
 
 ---
 
-## 编译docker镜像
+
+## docker编译镜像
 ```shell
 docker build -t funasr_websocket_server:0.1 .
 ```
 
-## 启动服务示例
+
+## docker启动服务示例
 ```shell
 model_dir=/workspace/model/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch
 vad_dir=/workspace/model/speech_fsmn_vad_zh-cn-16k-common-pytorch
@@ -33,7 +35,8 @@ docker run --net=host \
   funasr_websocket_server:0.1   
 ```
 
-## docker环境参数说明：
+
+## docker环境参数说明
 
 - MODEL_DIR <string>: 默认值/workspace/models/asr, asr模型目录, 包含model.onnx, config.yaml, am.mvn；
 - QUANTIZE <string>: 默认值true, load the model of model.onnx in model_dir. If set true, load the model of model_quant.onnx in model_dir
@@ -47,15 +50,19 @@ docker run --net=host \
 - CERTFILE <string>：默认值./server.crt, path of certficate for WSS connection. if it is empty, it will be in WS mode.
 - KEYFILE <string>：默认值./server.key, path of keyfile for WSS connection
 
-## RTF-CER测试
-- test_date: 2023/06/26
+
+## Performance
+- test_date: 2023/06/27
+- test_server: algo-local-server
+- test_model: [speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch](https://modelscope.cn/models/damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch/summary)
 - test_data: test-data/asr-test-3000-wav_scp.txt
 - test_version: asr_api_server:0.8.0+funasr_websocket_server:0.1
-- test_server: algo-local-server
 
-| concurrent-tasks | request_time(s) | RTF | WER |
-| :----- | :------: | -----: | -----: |
-| 100 | 116  | 0.00705 | 4.26% |
-| 300 | 119  | 0.00723 | 4.26% |
-| 500 | 130  | 0.00792 | 4.26% |
-
+| model_quant | concurrent-tasks | request_time(s) | RTF | Speed | WER |
+| :----- | :----- | :------: | -----: | -----: | -----: |
+| yes | 100 | 114  | 0.00697 | 143 | 4.26% |
+| yes | 300 | 119  | 0.00723 | 138 | 4.26% |
+| yes | 500 | 130  | 0.00792 | 126 | 4.26% |
+| no | 100 | 152  | 0.00929 | 107 | 4.22% |
+| no | 300 | 147  | 0.00899 | 111 | 4.22% |
+| no | 500 | 148  | 0.00901 | 110 | 4.22% |
