@@ -75,12 +75,12 @@ async def download(url, timeout_sec: int = 80, max_attempts: int = 3):
     return data, msg
 
 
-async def rec_no_vad(audio_origin):
+async def rec_no_vad(audio_origin, dtype='int16'):
     b = time.time()
     bio = BytesIO(audio_origin)
-    data, samplerate = sf.read(bio, dtype='int16')
+    data, samplerate = sf.read(bio, dtype=dtype)
     try:
-        text = await ws_rec(data.astype('int16').tobytes())
+        text = await ws_rec(data.astype(dtype).tobytes())
         exception = 0
     except Exception as e:
         logger.debug(e)
@@ -167,5 +167,7 @@ async def rec(audio_origin):
         if asr_type == 'ws_batch':
             return await rec_vad_ws_batch(audio_origin)
         return await rec_vad_ws(audio_origin)
+    elif CONF['use_funasr_websocket_redis']:
+        return await rec_no_vad(audio_origin, dtype=float)
     else:
         return await rec_no_vad(audio_origin)

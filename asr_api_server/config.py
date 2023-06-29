@@ -16,8 +16,10 @@ CONF = dict(
     # example: wenet_websocket_uri=['ws://127.0.0.1:8301'], funasr_triton_uri=['127.0.0.1:8001'], funasr_websocket_uri=['127.0.0.1:10095']
     decoder_server_uri=['127.0.0.1:10095'],
     download_timeout=20,  # audio download timeout seconds
-    use_vad='True', # whether use local vad
+    use_vad=True,  # whether use local vad
     vad_max=0,
+    use_funasr_websocket_redis=False, # False: use local disk to load wav; True: use redis replace
+    redis_port=6379
 )
 
 
@@ -33,6 +35,9 @@ def parse_env():
     CONF['decoder_server_uri'] = os.getenv('ASR_DECODER_SERVER_URI', CONF['decoder_server_uri'])
     CONF['download_timeout'] = os.getenv('DOWNLOAD_TIMEOUT', CONF['download_timeout'])
     CONF['use_vad'] = bool(os.getenv('USE_VAD', CONF['use_vad']).lower() == 'true')
+    CONF['use_funasr_websocket_redis'] = bool(os.getenv('USE_FUNASR_WEBSOCKET_REDIS', CONF['use_funasr_websocket_redis']).lower() == 'true')
+    CONF['redis_port'] = int(os.getenv('REDIS_PORT', CONF['redis_port']))
+
     assert CONF['decoder_server'] in ['wenet_websocket', 'funasr_triton', 'funasr_websocket'], \
         f'Invalid ASR_DECODER_SERVER: `{CONF["decoder_server"]}`, please input `wenet_websocket`, `funasr_triton` or `funasr_websocket`.'
 
@@ -43,6 +48,15 @@ def parse_env():
     print('-' * 66)
     print(f"ASR Use VAD: {CONF['use_vad']}")
     print('-' * 66)
+    if CONF['use_funasr_websocket_redis']:
+        print(f"Use Funasr Websocket Redis: {CONF['use_funasr_websocket_redis']}")
+        print('-' * 66)
+        print(f"Redis Port: {CONF['redis_port']}")
+        print('-' * 66)
+        stream = os.popen(f"redis-server --daemonize yes --appendonly no --port {CONF['redis_port']}")
+        redis_info = stream.read()
+        print(f"Start Redis information (Nothing displayed indicates successful startup!):\n {redis_info}")
+        print('-' * 66)
 
     # check decoder_server_uri
     decoder_server_uri = os.getenv('ASR_DECODER_SERVER_URI', '')

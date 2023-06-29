@@ -9,6 +9,7 @@ import asyncio
 import soundfile as sf
 import numpy as np
 import os
+import redis
 
 TRITON_FLAGS = {
     'url': "localhost:8001",
@@ -24,6 +25,7 @@ WS_START = json.dumps({
 WS_END = json.dumps({
     'signal': 'end'
 })
+REDIS_SESS = redis.Redis(port=config.CONF['redis_port'])
 
 
 async def ws_rec(data):
@@ -31,7 +33,10 @@ async def ws_rec(data):
     for i in range(3):
         try:
             if config.CONF['decoder_server'] == 'funasr_websocket':
-                texts = await funasr_websocket_rec(data)
+                if config.CONF['use_funasr_websocket_redis']:
+                    texts = await funasr_websocket_redis_rec(data)
+                else:
+                    texts = await funasr_websocket_rec(data)
             elif config.CONF['decoder_server'] == 'funasr_triton':
                 texts = await funasr_triton_rec(data)
             elif config.CONF['decoder_server'] == 'wenet_websocket':
@@ -41,6 +46,29 @@ async def ws_rec(data):
             logger.debug(e)
             time.sleep(3)
     return texts
+
+
+async def funasr_websocket_redis_rec(data: bytes) -> str:
+    funasr_websocket_uri = config.get_decoder_server_uri()
+    server_ip, port = funasr_websocket_uri.split(':')
+    funasr_wss_client = './funasr-wss-redis-client'
+    wav_key = time.time().hex()
+    REDIS_SESS.set(wav_key, data, ex=60 * 30)
+    cmd_rec = [
+        funasr_wss_client,
+        f"--server-ip {server_ip}",
+        f"--port {port}",
+        f"--wav-key {wav_key}",
+        f"--redis-port {config.CONF['redis_port']}",
+        f"--thread-num 1",
+        f"--is-ssl 1",
+    ]
+    process = await asyncio.create_subprocess_exec(*cmd_rec, stdout=asyncio.subprocess.PIPE,
+                                                   stderr=asyncio.subprocess.PIPE)
+    stdout, stderr = await process.communicate()
+    REDIS_SESS.delete(wav_key)
+    text = json.loads(stdout.decode('utf-8').strip())['text']
+    return text
 
 
 async def funasr_websocket_rec(data: bytes) -> str:

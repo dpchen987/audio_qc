@@ -2,7 +2,7 @@
 
 ASR解码服务docker-API
 
-- 版本：0.8.0
+- 版本：0.8.1
 
 ---
 
@@ -17,13 +17,16 @@ ASR解码服务docker-API
 - **DOWNLOAD_TIMEOUT**：默认值`20`, 音频下载超时时间(s),会重试三次；
 - **USE_VAD**：默认`False`，是否使用API中VAD;
 - **ASR_VAD_MAX**：默认值`0`，API中vad最大数量限制，`0`为不限制。
+- **USE_FUNASR_WEBSOCKET_REDIS**: 默认`false`，是否使用redis作funasr_websocket解码方式的缓存；
+- **REDIS_PORT**：默认`6379`，当`USE_FUNASR_WEBSOCKET_REDIS=true`时生效。
 
 ## docker运行示例：
 
 ```shell
-export version=0.8.0
+export version=0.8.1
 export ASR_API_PORT=8301
 export ASR_DECODER_SERVER_URI=127.0.0.1:10095
+export USE_FUNASR_WEBSOCKET_REDIS=false
 docker run --net=host \
   -it --rm \
   --gpus all \
@@ -36,6 +39,7 @@ docker run --net=host \
   -e ASR_DECODER_SERVER=funasr_websocket \
   -e ASR_DECODER_SERVER_URI=$ASR_DECODER_SERVER_URI \
   -e USE_VAD=false \
+  -e USE_FUNASR_WEBSOCKET_REDIS=$USE_FUNASR_WEBSOCKET_REDIS \
   --name asr_api_server_rm_$version_$ASR_API_PORT \
   asr_api_server:$version
 ```
