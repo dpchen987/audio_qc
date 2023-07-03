@@ -11,8 +11,8 @@ PUNC_QUANT=${PUNC_QUANT:="true"}
 DECODER_THREAD_NUM=${DECODER_THREAD_NUM:=8}
 IO_THREAD_NUM=${IO_THREAD_NUM:=8}
 PORT=${PORT:=10095}
-CERTFILE=${CERTFILE:="./server.crt"}
-KEYFILE=${KEYFILE:="./server.key"}
+#CERTFILE=${CERTFILE:="./server.crt"}
+#KEYFILE=${KEYFILE:="./server.key"}
 
 echo "MODEL_DIR: $MODEL_DIR"
 echo "QUANTIZE: $QUANTIZE"
@@ -23,8 +23,8 @@ echo "PUNC_QUANT: $PUNC_QUANT"
 echo "DECODER_THREAD_NUM: $DECODER_THREAD_NUM"
 echo "IO_THREAD_NUM: $IO_THREAD_NUM"
 echo "PORT: $PORT"
-echo "CERTFILE: $CERTFILE"
-echo "KEYFILE: $KEYFILE"
+#echo "CERTFILE: $CERTFILE"
+#echo "KEYFILE: $KEYFILE"
 
 ./funasr-wss-server \
   --model-dir $MODEL_DIR \
@@ -36,6 +36,6 @@ echo "KEYFILE: $KEYFILE"
   --decoder_thread_num $DECODER_THREAD_NUM \
   --io_thread_num $IO_THREAD_NUM \
   --port $PORT \
-  --certfile $CERTFILE \
-  --keyfile $KEYFILE
+  --certfile "" \
+  --keyfile ""
 

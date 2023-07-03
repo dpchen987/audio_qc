@@ -167,7 +167,5 @@ async def rec(audio_origin):
         if asr_type == 'ws_batch':
             return await rec_vad_ws_batch(audio_origin)
         return await rec_vad_ws(audio_origin)
-    elif CONF['use_funasr_websocket_redis']:
-        return await rec_no_vad(audio_origin, dtype=float)
     else:
         return await rec_no_vad(audio_origin)

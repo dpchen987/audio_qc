@@ -1,5 +1,10 @@
 # asr_api_server 版本记录
 
+## 0.8.2
+- 2023/07/03
+- 修改python-websocket客户端
+- 删除cpp-websocket客户端
+
 ---
 
 ## 0.8.1

@@ -3,14 +3,14 @@
 Service with websocket-cpp
 
 - [FunASR-websocket官方说明](https://github.com/alibaba-damo-academy/FunASR/blob/main/funasr/runtime/websocket/readme.md)
-- version: 0.1
+- version: 0.2
 
 ---
 
 
 ## docker编译镜像
 ```shell
-docker build -t funasr_websocket_server:0.1 .
+docker build -t funasr_websocket_server:0.2 .
 ```
 
 
@@ -32,7 +32,7 @@ docker run --net=host \
   -e DECODER_THREAD_NUM=8 \
   -e IO_THREAD_NUM=8 \
   --name funasr_websocket_server \
-  funasr_websocket_server:0.1   
+  funasr_websocket_server:0.2   
 ```
 
 
@@ -47,25 +47,20 @@ docker run --net=host \
 - DECODER_THREAD_NUM <int>： 默认值8，number of threads for decoder；
 - IO_THREAD_NUM <int>：默认值8，number of threads for network io；
 - PORT <int>： 默认值10095，监听端口；
-- CERTFILE <string>：默认值./server.crt, path of certficate for WSS connection. if it is empty, it will be in WS mode.
-- KEYFILE <string>：默认值./server.key, path of keyfile for WSS connection
 
 
 ## Performance
-- test_date: 2023/06/29
+- test_date: 2023/07/03
 - test_server: algo-local-server
 - test_model: [speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch](https://modelscope.cn/models/damo/speech_paraformer-large-vad-punc_asr_nat-zh-cn-16k-common-vocab8404-pytorch/summary)
 - test_data: test-data/asr-test-3000-wav_scp.txt
-- test_version: asr_api_server:0.8.1+funasr_websocket_server:0.1
+- test_version: asr_api_server:0.8.2+funasr_websocket_server:0.2
 
-| model_quant | cache | concurrent-tasks | request_time(s) | RTF | Speed | WER |
-| :----- | :----- | :----- | :------: | -----: | -----: | -----: |
-| yes | disk | 100 | 114  | 0.00697 | 143 | 4.26% |
-| yes | disk | 300 | 119  | 0.00723 | 138 | 4.26% |
-| yes | disk | 500 | 130  | 0.00792 | 126 | 4.26% |
-| yes | redis | 100 | 128  | 0.00779 | 128 | 4.23% |
-| yes | redis | 300 | 141  | 0.00860 | 116 | 4.23% |
-| yes | redis | 500 | 167  | 0.01018 | 98 | 4.23% |
-| no | disk | 100 | 152  | 0.00929 | 107 | 4.22% |
-| no | disk | 300 | 147  | 0.00899 | 111 | 4.22% |
-| no | disk | 500 | 148  | 0.00901 | 110 | 4.22% |
+| model_quant | concurrent-tasks | request_time(s) | RTF | Speed | WER |
+| :----- | :----- | :------: | -----: | -----: | -----: |
+| yes | 100 | 98  | 0.00596 | 167 | 4.23% |
+| yes | 300 | 96  | 0.00585 | 170 | 4.23% |
+| yes | 500 | 97  | 0.00591 | 169 | 4.23% |
+| no | 100 | 128  | 0.00782 | 127 | 4.20% |
+| no | 300 | 120  | 0.00733 | 136 | 4.20% |
+| no | 500 | 122  | 0.00743 | 134 | 4.20% |

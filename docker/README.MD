@@ -13,20 +13,22 @@ ASR解码服务docker-API
 - **ASR_API_PORT**：api的端口，默认值`8300`；
 - **ASR_API_CONCURRENCY**：api并发请求数，默认值CPU 数的一半；
 - **ASR_DECODER_SERVER**：默认值`funasr_websocket`，ASR解码服务，可选`wenet_websocket` or `funasr_triton` or `funasr_websocket`
-- **ASR_DECODER_SERVER_URI**：默认值：`127.0.0.1:10095`，解码服务的URI，如wenet_websocket_uri=`'ws://127.0.0.1:8301'`, funasr_triton_uri=`'127.0.0.1:8001'`, funasr_websocket_uri=`'127.0.0.1:10095'`，可用`, `隔开多次填写;
+- **ASR_DECODER_SERVER_URI**：默认值：`ws://127.0.0.1:10095`，解码服务的URI，如：
+    - wenet_websocket_uri=`'ws://127.0.0.1:8301'`；
+    - funasr_triton_uri=`'127.0.0.1:8001'`；
+    - funasr_websocket_uri=`'ws://127.0.0.1:10095'`。
+    可用`, `隔开多次填写;
 - **DOWNLOAD_TIMEOUT**：默认值`20`, 音频下载超时时间(s),会重试三次；
 - **USE_VAD**：默认`False`，是否使用API中VAD;
 - **ASR_VAD_MAX**：默认值`0`，API中vad最大数量限制，`0`为不限制。
-- **USE_FUNASR_WEBSOCKET_REDIS**: 默认`false`，是否使用redis作funasr_websocket解码方式的缓存；
-- **REDIS_PORT**：默认`6379`，当`USE_FUNASR_WEBSOCKET_REDIS=true`时生效。
+
 
 ## docker运行示例：
 
 ```shell
-export version=0.8.1
+export version=0.8.2
 export ASR_API_PORT=8301
-export ASR_DECODER_SERVER_URI=127.0.0.1:10095
-export USE_FUNASR_WEBSOCKET_REDIS=false
+export ASR_DECODER_SERVER_URI=ws://127.0.0.1:10095
 docker run --net=host \
   -it --rm \
   --gpus all \
@@ -39,7 +41,6 @@ docker run --net=host \
   -e ASR_DECODER_SERVER=funasr_websocket \
   -e ASR_DECODER_SERVER_URI=$ASR_DECODER_SERVER_URI \
   -e USE_VAD=false \
-  -e USE_FUNASR_WEBSOCKET_REDIS=$USE_FUNASR_WEBSOCKET_REDIS \
   --name asr_api_server_rm_$version_$ASR_API_PORT \
   asr_api_server:$version
 ```
