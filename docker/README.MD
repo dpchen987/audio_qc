@@ -21,6 +21,7 @@ ASR解码服务docker-API
 - **DOWNLOAD_TIMEOUT**：默认值`20`, 音频下载超时时间(s),会重试三次；
 - **USE_VAD**：默认`False`，是否使用API中VAD;
 - **ASR_VAD_MAX**：默认值`0`，API中vad最大数量限制，`0`为不限制。
+- **ASR_RESPONSE_DELAY**：默认值`1.5`，asr响应延时时间（秒）。
 
 
 ## docker运行示例：

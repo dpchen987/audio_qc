@@ -8,7 +8,7 @@ from fastapi import Depends, Request, File, UploadFile
 from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
-from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse, CallBackParam
+from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse, CallBackParam, DelayTimeInfo, DelayTimeResp
 from asr_api_server.asr_consumer import speech_recognize
 from asr_api_server import config
 
@@ -129,6 +129,24 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     else:
         response['code'] = 4001
         response['msg'] = 'no task_id or file_path'
+    await asyncio.sleep(config.CONF['asr_response_delay'])
+    return response
+
+@router.post("/response_time_set", response_model=DelayTimeResp)
+async def delay_time_set(delaytime_para: DelayTimeInfo = Body(..., title="延时响应时间")):
+    '''设置ASR相应延时时间
+    '''
+    response = {'operate':delaytime_para.operate}
+    if delaytime_para.appkey == 'asr123':
+        if delaytime_para.operate == 'set':
+            config.CONF['asr_response_delay'] = delaytime_para.value
+            response['value'] = config.CONF['asr_response_delay']
+        elif delaytime_para.operate == 'get':
+            response['value'] = config.CONF['asr_response_delay']
+        else:
+            response['msg'] = 'Invalid operate !!!'
+    else:
+        response['msg'] = 'Invalid key !!!'
     return response
 
 CALLBACK_COUNTER = 0

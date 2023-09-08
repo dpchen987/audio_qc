@@ -52,3 +52,13 @@ class RecognizeResponse(BaseModel):
     code: int = Field(0, description='状态码: 0-成功, 异常码后续规定', example='0')
     msg: str = Field("success", description='返回状态的说明', example="success")
     data: str = Field(' ', description='预留字段', example=" ")
+
+class DelayTimeInfo(BaseModel):
+    appkey: str = Field(..., description='接口调用密钥', example="123456")
+    operate: str = Field(..., description='操作类型', example="set")
+    value: float = Field(1, description='延时时间(秒)', example='1.0')
+
+class DelayTimeResp(BaseModel):
+    msg: str = Field("success", description='返回状态的说明', example="success")
+    operate: str = Field(..., description='操作类型', example="set")
+    value: float = Field(None, description='延时时间(秒)', example='1.0')

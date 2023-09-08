@@ -18,12 +18,14 @@ CONF = dict(
     download_timeout=20,  # audio download timeout seconds
     use_vad=False,  # whether use local vad
     vad_max=0,
+    asr_response_delay=1.5, 
 )
 
 
 def parse_env():
     global CONF
     CONF['vad_max'] = int(os.getenv('ASR_VAD_MAX', CONF['vad_max']))
+    CONF['asr_response_delay'] = float(os.getenv('ASR_RESPONSE_DELAY', CONF['asr_response_delay']))
     CONF['url_db'] = os.getenv('ASR_API_URL_DB', CONF['url_db'])
     if not CONF['url_db']:
         raise ValueError('environmente ASR_API_URL_DB must be set!!!')
