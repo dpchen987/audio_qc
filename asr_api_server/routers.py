@@ -140,6 +140,7 @@ async def delay_time_set(delaytime_para: DelayTimeInfo = Body(..., title="延时
     if delaytime_para.appkey == 'asr123':
         if delaytime_para.operate == 'set':
             config.CONF['asr_response_delay'] = delaytime_para.value
+            logger.info(f"reset response time to: {delaytime_para.value} sec")
             response['value'] = config.CONF['asr_response_delay']
         elif delaytime_para.operate == 'get':
             response['value'] = config.CONF['asr_response_delay']
