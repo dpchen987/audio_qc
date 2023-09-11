@@ -16,7 +16,7 @@ CONF = dict(
     # example: wenet_websocket_uri=['ws://127.0.0.1:8301'], funasr_triton_uri=['127.0.0.1:8001'], funasr_websocket_uri=['127.0.0.1:10095']
     decoder_server_uri=['127.0.0.1:10095'],
     download_timeout=20,  # audio download timeout seconds
-    use_vad=False,  # whether use local vad
+    use_vad='False',  # whether use local vad
     vad_max=0,
     asr_response_delay=1.5, 
 )
