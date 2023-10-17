@@ -118,14 +118,11 @@ async def rec_vad_ws(audio_origin):
     exception_ls = []
     for task in tasks:
         result = {'err': ''}
-        try:
-            result['text'] = await task
-        except Exception as e:
-            traceback.print_exc()
-            result['text'] = ''
-            result['err'] = str(e)
+        result['text'], message = await task
+        result['err'] = message
+        if message:
             exception += 1
-            if repr(e) not in exception_ls: exception_ls.append(repr(e))
+            exception_ls.append(message)
         results.append(result)
     timing = time.time() - b
     exception_info = f"{exception} exceptions : {', '.join(exception_ls)}" if exception else ''

@@ -34,7 +34,7 @@ FUNASR_WS_END = json.dumps({
 
 
 async def ws_rec(data):
-    texts = ''
+    texts, message = '', ''
     for i in range(3):
         try:
             if config.CONF['decoder_server'] == 'funasr_websocket':
@@ -46,8 +46,9 @@ async def ws_rec(data):
             break
         except Exception as e:
             logger.debug(e)
+            message = str(e)
             time.sleep(3)
-    return texts
+    return texts, message
 
 
 
