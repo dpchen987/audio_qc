@@ -17,7 +17,7 @@ CONF = dict(
     decoder_server_uri=['127.0.0.1:10095'],
     download_timeout=20,  # audio download timeout seconds
     use_vad='False',  # whether use local vad
-    vad_gpu=False,
+    vad_gpu=True,
     vad_max=0,
     asr_response_delay=1.5, 
 )
