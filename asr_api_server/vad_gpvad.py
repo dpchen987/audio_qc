@@ -6,7 +6,7 @@ from asr_api_server.logger import logger
 from asr_api_server import config
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
-VAD = GPVAD()
+VAD = GPVAD(use_gpu=config.CONF['vad_gpu'])
 
 
 def cut(timeline, data, samplerate):
@@ -55,6 +55,18 @@ def cut_to_max(segments, samplerate):
             n = s[begin:end]
             new.append(n)
     return new
+
+
+def vad_duration(audio):
+    bio = BytesIO(audio)
+    timeline = VAD.vad(bio)
+    total = 0
+    for i, tl in enumerate(timeline):
+        duration = tl[1] - tl[0]
+        print(f'{duration = }')
+        total += duration
+    total = total / 1000
+    return total
 
 
 def vad(audio):

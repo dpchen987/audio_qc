@@ -12,7 +12,7 @@ from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server import config
 from asr_api_server.data_model.api_model import AudioInfo
-from asr_api_server.vad_gpvad import vad
+from asr_api_server.vad_gpvad import vad_duration
 
 ASR_NUM = None
 CALLBACK_URL = ""
@@ -111,7 +111,7 @@ async def speech_recognize(audio_info):
 async def speech_vad(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
-    vad_result = {"code":0, "data": '', "msg":"success"}
+    vad_result = {"code":0, "duration": 0, "msg":"success"}
     try:
         # 音频下载
         if audio_info.trans_type == 1:
@@ -131,9 +131,9 @@ async def speech_vad(audio_info):
             return
         # 音频vad
         b = time.time()
-        segments, _, sr = vad(audio)
-        logger.info(f'vad time: {time.time() - b}, {len(segments) = }')
-        vad_result['data'] = json.dumps([len(seg) / sr for seg in segments])
+        total = vad_duration(audio)
+        logger.info(f'vad time: {time.time() - b}, {total = }')
+        vad_result['duration'] = total
     except Exception as e:
         logger.exception(e)
         vad_result['code'] = 4000
