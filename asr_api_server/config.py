@@ -17,6 +17,7 @@ CONF = dict(
     decoder_server_uri=['127.0.0.1:10095'],
     download_timeout=20,  # audio download timeout seconds
     use_vad='False',  # whether use local vad
+    vad_gpu=False,
     vad_max=0,
     asr_response_delay=1.5, 
 )
@@ -35,6 +36,7 @@ def parse_env():
     CONF['decoder_server_uri'] = os.getenv('ASR_DECODER_SERVER_URI', CONF['decoder_server_uri'])
     CONF['download_timeout'] = os.getenv('DOWNLOAD_TIMEOUT', CONF['download_timeout'])
     CONF['use_vad'] = bool(os.getenv('USE_VAD', CONF['use_vad']).lower() == 'true')
+    CONF['vad_gpu'] = bool(os.getenv('VAD_GPU', CONF['vad_gpu']))
 
     assert CONF['decoder_server'] in ['wenet_websocket', 'funasr_triton', 'funasr_websocket'], \
         f'Invalid ASR_DECODER_SERVER: `{CONF["decoder_server"]}`, please input `wenet_websocket`, `funasr_triton` or `funasr_websocket`.'
