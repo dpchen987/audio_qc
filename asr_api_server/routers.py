@@ -9,7 +9,7 @@ from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse, CallBackParam, DelayTimeInfo, DelayTimeResp
-from asr_api_server.asr_consumer import speech_recognize
+from asr_api_server.asr_consumer import speech_recognize, speech_vad
 from asr_api_server import config
 
 def auth(appkey):
@@ -130,6 +130,42 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
         response['code'] = 4001
         response['msg'] = 'no task_id or file_path'
     await asyncio.sleep(config.CONF['asr_response_delay'])
+    return response
+
+@router.post("/speech_vad", response_model=RecognizeResponse)
+async def data_vad(audio_info: AudioInfo = Body(..., title="音频信息")):
+    '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
+    '''
+    response = {}
+    # 传输类型判断
+    logger.info(f"task: {audio_info.task_id} enter vad api !-!")
+    if audio_info.trans_type == 1 and audio_info.task_id and audio_info.file_path:
+        # 传输类型: url
+        response = await speech_vad(audio_info)
+        # Add task to the set. This creates a strong reference.
+        # To prevent keeping references to finished tasks forever,
+        # make each task remove its own reference from the set after completion:
+    elif audio_info.trans_type == 2 and audio_info.task_id and audio_info.file_path:
+        # 传输类型: bytes
+        if audio_info.file_content and audio_info.file_type in ('wav', 'opus'):
+            # file_name = audio_info.file_path.split('/')[-1]
+            # audio_info.file_path = config.file_dir + f'/{file_name}'
+            # if type(audio_info.file_content) == str: audio_info.file_content = audio_info.file_content.encode()
+            # file_content = base64.b64decode(audio_info.file_content)
+            # with open(audio_info.file_path, 'wb') as fin:
+            #     fin.write(file_content)
+            # 数据清空
+            # audio_info.file_content = 'processing'
+            response = await speech_vad(audio_info)
+            # Add task to the set. This creates a strong reference.
+            # To prevent keeping references to finished tasks forever,
+            # make each task remove its own reference from the set after completion:
+        else:
+            response['code'] = 4001
+            response['msg'] = 'no file_content or wrong file_type'
+    else:
+        response['code'] = 4001
+        response['msg'] = 'no task_id or file_path'
     return response
 
 @router.post("/response_time_set", response_model=DelayTimeResp)
