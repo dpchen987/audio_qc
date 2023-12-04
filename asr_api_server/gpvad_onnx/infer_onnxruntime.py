@@ -179,7 +179,7 @@ def extract_feature_mem(wav, sr):
 
 
 class GPVAD:
-    def __init__(self, model_name='t2bal') -> None:
+    def __init__(self, model_name='t2bal', use_gpu=True) -> None:
         assert model_name in ['sre', 'a2_v2', 't2bal']
         root_dir = os.path.dirname(os.path.abspath(__file__))
         if model_name == 'sre':
@@ -188,10 +188,11 @@ class GPVAD:
             model_path = os.path.join(root_dir, 'onnx_models/t2bal.onnx')
         else:
             model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2.onnx')
-        if onnxruntime.get_device() == 'GPU':
+        if onnxruntime.get_device() == 'GPU' and use_gpu:
             providers = ["CUDAExecutionProvider"]
         else:
             providers = ['CPUExecutionProvider']
+        print(f'===== GPVAD {providers = }')
         self.model = onnxruntime.InferenceSession(model_path, providers=providers)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
@@ -230,7 +231,7 @@ if __name__ == "__main__":
     from sys import argv
     import time
     fn = argv[1]
-    pgvad = GPVAD('sre')
+    pgvad = GPVAD('t2bal', use_gpu=False)
     b = time.time()
     oo = pgvad.vad(fn)
     print('time:', time.time() - b, len(oo))
