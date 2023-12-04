@@ -4,7 +4,6 @@ import collections
 import time
 import webrtcvad
 
-from asr_api_server.logger import logger
 
 g_vad = webrtcvad.Vad()
 
@@ -129,7 +128,6 @@ def vad(data, aggressiveness=3):
     for segment in segments:
         if len(segment) < 25:
             # 25 * 20ms = 500ms
-            logger.info(f'too short segment {len(segment)*20}ms')
             continue
         seg_bytes.append(b''.join([f.bytes for f in segment]))
     return seg_bytes, duration, samplerate
@@ -144,7 +142,7 @@ if __name__ == '__main__':
         sys.exit(1)
     data = open(argv[1], 'rb').read()
     b = time.time()
-    segments, duration, sr = vad(data)
+    segments, duration, sr = vad(data, 1)
     e = time.time()
     print(f'{len(segments) = }')
     for i, segment in enumerate(segments):
