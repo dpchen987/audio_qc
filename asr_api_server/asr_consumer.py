@@ -108,7 +108,7 @@ async def speech_recognize(audio_info):
             # 不管回调是否成功，都删除processing_set中的task
             config.processing_set.discard(audio_info.task_id)
 
-VAD_NUM = asyncio.Semaphore(20)
+VAD_NUM = asyncio.Semaphore(10)
 async def speech_vad(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
@@ -135,7 +135,7 @@ async def speech_vad(audio_info):
             b = time.time()
             total = vad_duration(audio)
             logger.info(f'vad time: {time.time() - b}, {total = }')
-            vad_result['duration'] = json.dumps(total)
+            vad_result['data'] = json.dumps(total)
     except Exception as e:
         logger.exception(e)
         vad_result['code'] = 4000
