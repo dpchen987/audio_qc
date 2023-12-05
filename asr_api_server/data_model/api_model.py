@@ -51,7 +51,7 @@ class CallBackParam(BaseModel):
 class RecognizeResponse(BaseModel):
     code: int = Field(0, description='状态码: 0-成功, 异常码后续规定', example='0')
     msg: str = Field("success", description='返回状态的说明', example="success")
-    duration: float = Field(0.0, description='预留字段', example=0.0)
+    data: str = Field(' ', description='预留字段', example=" ")
 
 class DelayTimeInfo(BaseModel):
     appkey: str = Field(..., description='接口调用密钥', example="123456")
