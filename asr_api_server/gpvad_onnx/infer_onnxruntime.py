@@ -167,10 +167,10 @@ def extract_feature_mem(wav, sr):
         wav = wav.mean(-1)
     if wav.dtype != 'float32':
         wav = wav.astype('float32')
-    if sr != SAMPLE_RATE:
-        b = time.time()
-        wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
     b = time.time()
+    if sr != SAMPLE_RATE:
+        print('-------- librosa.resample() ---')
+        wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
     mel = librosa.feature.melspectrogram(
         y=wav.astype(np.float32), sr=SAMPLE_RATE, **LMS_ARGS)
     feat = np.log(mel + EPS).T
@@ -179,21 +179,42 @@ def extract_feature_mem(wav, sr):
 
 
 class GPVAD:
-    def __init__(self, model_name='t2bal', use_gpu=True) -> None:
+    def __init__(self, model_name='t2bal', use_gpu=True, quant='') -> None:
         assert model_name in ['sre', 'a2_v2', 't2bal']
+        self.quant = quant
         root_dir = os.path.dirname(os.path.abspath(__file__))
         if model_name == 'sre':
             model_path = os.path.join(root_dir, 'onnx_models/sre.onnx')
+            if quant == 'int8':
+                model_path = os.path.join(root_dir, 'onnx_models/sre_quant.onnx')
+            elif quant == 'fp16':
+                model_path = os.path.join(root_dir, 'onnx_models/sre_fp16.onnx')
         elif model_name == 't2bal':
             model_path = os.path.join(root_dir, 'onnx_models/t2bal.onnx')
+            if quant == 'int8':
+                model_path = os.path.join(root_dir, 'onnx_models/t2bal_quant.onnx')
+            elif quant == 'fp16':
+                model_path = os.path.join(root_dir, 'onnx_models/t2bal_fp16.onnx')
         else:
             model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2.onnx')
+            if quant == 'int8':
+                model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2_quant.onnx')
+            elif quant == 'fp16':
+                model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2_fp16.onnx')
         if onnxruntime.get_device() == 'GPU' and use_gpu:
-            providers = ["CUDAExecutionProvider"]
+            conf =  {
+                "cudnn_conv_use_max_workspace": '1',
+                "cudnn_conv1d_pad_to_nc1d": '1',
+                # 'cudnn_conv_algo_search': 'EXHAUSTIVE',
+                # 'do_copy_in_default_stream': True,
+            }
+            providers = [("CUDAExecutionProvider", conf)]
         else:
             providers = ['CPUExecutionProvider']
-        print(f'===== GPVAD {providers = }')
-        self.model = onnxruntime.InferenceSession(model_path, providers=providers)
+        print(f'===== GPVAD {providers = }, {model_path = }')
+        sess_opt = onnxruntime.SessionOptions()
+        # sess_opt.intra_op_num_threads = 8
+        self.model = onnxruntime.InferenceSession(model_path, sess_opt, providers=providers)
         self.model_resolution = 20  # miliseconds
         encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
         with open(encoder_path, 'rb') as f:
@@ -203,7 +224,10 @@ class GPVAD:
         self.postprocessing_method = double_threshold
 
     def vad(self, audio_path):
-        wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
+        b = time.time()
+        # wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
+        wav, sr = sf.read(audio_path, dtype='float32')
+        print('======= read audio data time:', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
         print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
@@ -212,6 +236,8 @@ class GPVAD:
     def vad_mem(self, wav, sr):
         feature = extract_feature_mem(wav, sr)
         feature = np.expand_dims(feature, axis=0)
+        if self.quant == 'fp16':
+            feature = feature.astype('float16')
         output = []
         zz = self.model.run(None, {'modelInput': feature})
         prediction_tag, prediction_time = zz
@@ -231,22 +257,25 @@ if __name__ == "__main__":
     from sys import argv
     import time
     fn = argv[1]
-    pgvad = GPVAD('t2bal', use_gpu=False)
-    b = time.time()
-    oo = pgvad.vad(fn)
-    print('time:', time.time() - b, len(oo))
+    quant = False
+    use_gpu = True
+    results = []
+    loop = 50
+    for quant in ['int8', 'fp32']:
+        pgvad = GPVAD('t2bal', use_gpu=use_gpu, quant=quant)
+        times = []
+        for i in range(loop):
+            b = time.time()
+            oo = pgvad.vad(fn)
+            e = time.time() - b
+            times.append(e)
+            # print(i, 'time:', e, len(oo))
+        avg = sum(times) / len(times)
+        print(f'{quant = }, {avg = }')
+        print('===' * 30)
+        results.append((quant, avg))
+    for r in results:
+        print(f'{use_gpu = }, quant: {r[0]}, avg: {r[1]}')
     with open('z-vad-ts-onnx.txt', 'w') as f:
         ll = [f'{o[0]}\t{o[1]}\n' for o in oo]
         f.write(''.join(ll))
-    # b = time.time()
-    # oo = pgvad.vad(fn)
-    # print('time:', time.time() - b)
-    # import soundfile as sf
-    # from io import BytesIO
-    # audio = open(fn, 'rb').read()
-    # data, samplerate = sf.read(BytesIO(audio), dtype='float32')
-    # print('xxxxx', len(data), samplerate)
-    # npdata = data  #np.array(data, dtype='float32')
-    # print('======', data == npdata)
-    # tl = pgvad.vad_mem(npdata, samplerate)
-    # print(tl)
