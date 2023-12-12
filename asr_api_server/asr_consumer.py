@@ -13,6 +13,7 @@ from asr_api_server.logger import logger
 from asr_api_server import config
 from asr_api_server.data_model.api_model import AudioInfo
 from asr_api_server.vad_gpvad import vad_duration
+from io import BytesIO
 
 ASR_NUM = None
 CALLBACK_URL = ""
@@ -108,7 +109,7 @@ async def speech_recognize(audio_info):
             # 不管回调是否成功，都删除processing_set中的task
             config.processing_set.discard(audio_info.task_id)
 
-VAD_NUM = asyncio.Semaphore(10)
+VAD_NUM = asyncio.Semaphore(50)
 async def speech_vad(audio_info):
     '''识别语音为文本，接收语音数据audio-url参数，返回转译文本
     '''
@@ -133,7 +134,11 @@ async def speech_vad(audio_info):
                 return
             # 音频vad
             b = time.time()
-            total = vad_duration(audio)
+            # pre vad
+            total = vad_duration(audio, prevad=True)
+            if total < 1.5:
+                # full vad
+                total = max(total, vad_duration(audio, prevad=False))
             logger.info(f'vad time: {time.time() - b}, {total = }')
             vad_result['data'] = json.dumps(total)
     except Exception as e:

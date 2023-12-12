@@ -1,13 +1,14 @@
 from io import BytesIO
 import soundfile as sf
 import numpy as np
+import librosa
 from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
 from asr_api_server.logger import logger
 from asr_api_server import config
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
 VAD = GPVAD(use_gpu=config.CONF['vad_gpu'])
-
+SAMPLE_RATE = 16000
 
 def cut(timeline, data, samplerate):
     segments = []
@@ -57,14 +58,36 @@ def cut_to_max(segments, samplerate):
     return new
 
 
-def vad_duration(audio):
+# def vad_duration(audio):
+#     bio = BytesIO(audio)
+#     timeline = VAD.vad(bio)
+#     total = 0
+#     for i, tl in enumerate(timeline):
+#         duration = tl[1] - tl[0]
+#         print(f'{duration = }')
+#         total += duration
+#     total = total / 1000
+#     return total
+
+def vad_duration(audio, prevad=False):
+    "vad_duration"
     bio = BytesIO(audio)
-    timeline = VAD.vad(bio)
+    if prevad:
+        wav, sr = sf.read(bio, stop=SAMPLE_RATE * 10, dtype='float32')
+    else:
+        wav, sr = sf.read(bio, start=SAMPLE_RATE * 8, dtype='float32')
+        logger.info(f'----Full vad !----')
+    if not wav.size:
+        logger.info(f'empty audio !')
+        return 0
+    if sr != SAMPLE_RATE:
+        wav, sr = librosa.load(wav, sr=SAMPLE_RATE, res_type="soxr_hq")
+    timeline = VAD.vad_tsk(wav, sr)
     total = 0
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
         print(f'{duration = }')
-        total += duration
+        total = max(duration, total)
     total = total / 1000
     return total
 

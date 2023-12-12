@@ -208,6 +208,13 @@ class GPVAD:
         ss = self.vad_mem(wav, sr)
         print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
         return ss
+    
+    def vad_tsk(self, wav, sr):
+        # wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
+        b = time.time()
+        ss = self.vad_mem(wav, sr)
+        print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
+        return ss
 
     def vad_mem(self, wav, sr):
         feature = extract_feature_mem(wav, sr)
