@@ -9,8 +9,10 @@ from asr_api_server import __version__
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
 from asr_api_server.data_model.api_model import ASRResponse, ASRHeaer, AudioInfo, RecognizeResponse, CallBackParam, DelayTimeInfo, DelayTimeResp
-from asr_api_server.asr_consumer import speech_recognize, speech_vad
+from asr_api_server.asr_consumer import speech_recognize
+from asr_api_server.vad_processor import speech_vad
 from asr_api_server import config
+from asr_api_server import urldb
 
 def auth(appkey):
     return appkey == '123'
@@ -96,7 +98,7 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
     logger.info(f"task: {audio_info.task_id} enter api !-!")
     if audio_info.trans_type == 1 and audio_info.task_id and audio_info.file_path:
         # 传输类型: url
-        config.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
+        urldb.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
         task = asyncio.create_task(speech_recognize(audio_info))
         # Add task to the set. This creates a strong reference.
         config.background_tasks.add(task)
@@ -115,7 +117,7 @@ async def data_receive(audio_info: AudioInfo = Body(..., title="音频信息")):
             #     fin.write(file_content)
             # 数据清空
             # audio_info.file_content = 'processing'
-            config.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
+            urldb.url_db.Put(audio_info.task_id.encode(), audio_info.json().encode())
             task = asyncio.create_task(speech_recognize(audio_info))
             # Add task to the set. This creates a strong reference.
             config.background_tasks.add(task)

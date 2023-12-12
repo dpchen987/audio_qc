@@ -82,8 +82,11 @@ def get_args():
         '-s', '--save_to', required=True,
         help='path to save transcription')
     parser.add_argument(
-        '-n', '--num_concurrence', type=int, required=True,
+        '-c', '--num_concurrence', type=int, required=True,
         help='num of concurrence for query')
+    parser.add_argument(
+        '-n', '--num_query', type=int, required=True,
+        help='num of total query')
     parser.add_argument(
         '-v', '--verbose', required=False, default=False,
         help='show logs')
@@ -135,6 +138,8 @@ async def main(args):
             duration = (len(data)) / 16000
             total_duration += duration
             wav_scp.append((zz[0], data.tobytes()))
+            if len(wav_scp) >= args.num_query:
+                break
     print(f'{len(wav_scp) = }, {total_duration = }')
 
     # 2. run

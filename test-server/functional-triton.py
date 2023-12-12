@@ -4,19 +4,19 @@ import numpy as np
 
 
 TRITON_FLAGS = {
-    'url': "localhost:8001",
+    'url': "localhost:9001",
     'verbose': False,
     'model_name': 'infer_pipeline',
 }
 
-def triton_rec(data: bytes) -> list:
+def triton_rec(data: bytes, dtype) -> list:
     """
     测试triton
     :param data: int16字节音频数据
     :return:
     """
     results = []
-    samples = np.frombuffer(data, dtype='int16')
+    samples = np.frombuffer(data, dtype=dtype)
     samples = np.array([samples], dtype=np.float32)
     lengths = np.array([[len(samples)]], dtype=np.int32)
 
@@ -52,8 +52,17 @@ def triton_rec(data: bytes) -> list:
 
 if __name__ == '__main__':
     import soundfile as sf
-    wav = '/aidata/audio/public/Leaderboard/datasets/SPEECHIO_ASR_ZH00006/wav/zv3V48f1X_A_0036.wav'
-    waveform_arr, sr = sf.read(wav, dtype='int16')
+    import time
+    from sys import argv
+    # wav = '/aidata/audio/public/Leaderboard/datasets/SPEECHIO_ASR_ZH00006/wav/zv3V48f1X_A_0036.wav'
+    wav = argv[1]
+    dtype = 'int16'
+    waveform_arr, sr = sf.read(wav, dtype=dtype)
+    print(f'{waveform_arr.dtype = }, {type(waveform_arr) = }, {sr = }')
     waveform_by = waveform_arr.tobytes()
-    res = triton_rec(waveform_by)
-    print(res)
+    for i in range(1):
+        b = time.time()
+        res = triton_rec(waveform_by, dtype=dtype)
+        e = time.time()
+        print(res)
+        print(e-b)

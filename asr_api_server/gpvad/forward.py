@@ -1,5 +1,6 @@
 import time
 import os
+import pickle
 import torch
 import numpy as np
 import librosa
@@ -11,7 +12,8 @@ except:
     from models import crnn
 
 
-SAMPLE_RATE = 22050
+# SAMPLE_RATE = 22050
+SAMPLE_RATE = 16000
 EPS = np.spacing(1)
 LMS_ARGS = {
     'n_fft': 2048,
@@ -168,60 +170,87 @@ def extract_feature(wavefilepath):
 def extract_feature_mem(wav, sr):
     if wav.ndim > 1:
         wav = wav.mean(-1)
-    print('---------', wav.shape, wav.dtype)
     if wav.dtype != 'float32':
-        print('\t-----> change to float32')
         wav = wav.astype('float32')
     if sr != SAMPLE_RATE:
         b = time.time()
         wav = librosa.resample(wav, sr, target_sr=SAMPLE_RATE)
         print('---------- resample time', time.time() - b)
-    print('---------', wav.shape, wav.dtype)
     b = time.time()
     mel = librosa.feature.melspectrogram(
-        wav.astype(np.float32), SAMPLE_RATE, **LMS_ARGS)
+        y=wav.astype(np.float32), sr=SAMPLE_RATE, **LMS_ARGS)
     print('---------- mel feature time', time.time() - b)
     return np.log(mel + EPS).T
 
 
 class GPVAD:
-    def __init__(self, model_name='a2_v2') -> None:
-        assert model_name in ['sre', 'a2_v2']
+    def __init__(self, model_name='t2bal', use_gpu=False) -> None:
+        assert model_name in ['sre', 'a2_v2', 't2bal']
+        self.gpu = use_gpu
         root_dir = os.path.dirname(os.path.abspath(__file__))
         if model_name == 'sre':
             model_path = os.path.join(root_dir, 'pretrained_models/sre/model.pth')
+        elif model_name == 't2bal':
+            model_path = os.path.join(root_dir, 'pretrained_models/t2bal/t2bal.pth')
         else:
             model_path = os.path.join(root_dir, 'pretrained_models/audio2_vox2/model.pth')
         self.model = crnn(
             outputdim=2,
             pretrained_from=model_path
-        ).eval()
+        )
+        if use_gpu:
+            self.model.to('cuda')
+        self.model.eval()
+        # speedup by PyTorch 2.x
+        if self.gpu_is_ok():
+            import torch._dynamo
+            torch._dynamo.config.suppress_errors = True
+            torch._dynamo.reset()
+            self.model = torch.compile(self.model, mode="reduce-overhead")
         self.model_resolution = 20  # miliseconds
-        encoder_path = os.path.join(root_dir, 'labelencoders/vad.pth')
-        self.encoder = torch.load(encoder_path)
-        self.threshold = (0.3, 0.05)  # 更好的recall，论文推荐(0.5, 0.1)
+        encoder_path = os.path.join(root_dir, 'labelencoders/vad.pkl')
+        # self.encoder = torch.load(encoder_path)
+        with open(encoder_path, 'rb') as f:
+            self.encoder = pickle.load(f)
+        self.threshold = (0.2, 0.01)  # 更好的recall，论文推荐(0.5, 0.1)
         self.speech_label_idx = np.where('Speech' == self.encoder.classes_)[0].squeeze()
         self.postprocessing_method = double_threshold
 
+    def gpu_is_ok(self):
+        gpu_ok = False
+        if torch.cuda.is_available():
+            device_cap = torch.cuda.get_device_capability()
+            if device_cap in ((7, 0), (8, 0), (9, 0)):
+                gpu_ok = True
+        if not gpu_ok:
+            print(
+                "!!! GPU is not NVIDIA V100, A100, or H100. Speedup numbers may be lower "
+                "than expected!!!!"
+            )
+        return gpu_ok
+
     def vad(self, audio_path):
         b = time.time()
-        wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_vhq")
-        print('---------------- librosa.load() time ', time.time() - b)
+        # wav, sr = librosa.load(audio_path, sr=SAMPLE_RATE, res_type="soxr_hq")
+        wav, sr = sf.read(audio_path, dtype='float32')
+        print('---------------- audio read/decode time ', time.time() - b)
         b = time.time()
         ss = self.vad_mem(wav, sr)
-        print('--vad_mem() time ', time.time() - b, 'segments count:', len(ss))
+        print('---------------- vad_mem() time ', time.time() - b, 'segments count:', len(ss))
         return ss
 
     def vad_mem(self, wav, sr):
         feature = extract_feature_mem(wav, sr)
         feature = np.expand_dims(feature, axis=0)
-        print(f'{feature.shape = }')
         output = []
         with torch.no_grad():
             feature = torch.as_tensor(feature)
+            if self.gpu:
+                feature = feature.to('cuda')
             prediction_tag, prediction_time = self.model(feature)
-            print(type(prediction_tag))
-            print(type(prediction_time))
+            if self.gpu:
+                prediction_tag = prediction_tag.to('cpu')
+                prediction_time = prediction_time.to('cpu')
             if prediction_time is not None:  # Some models do not predict timestamps
                 thresholded_prediction = self.postprocessing_method(
                     prediction_time, *self.threshold)
@@ -236,22 +265,19 @@ class GPVAD:
 if __name__ == "__main__":
     from sys import argv
     fn = argv[1]
-    pgvad = GPVAD('a2_v2')
-    b = time.time()
-    oo = pgvad.vad(fn)
-    print('time:', time.time() - b, len(oo))
+    use_gpu = True
+    pgvad = GPVAD('t2bal', use_gpu)
+    loop = 50
+    for use_gpu in [False, True]:
+        times = []
+        for i in range(loop):
+            b = time.time()
+            oo = pgvad.vad(fn)
+            tt = time.time() - b
+            print(f'=== vad total time: {tt}')
+            times.append(tt)
+        avg = sum(times) / len(times)
+        print(f'{use_gpu = }, {avg = }')
     with open('z-vad-ts.txt', 'w') as f:
         ll = [f'{o[0]}\t{o[1]}\n' for o in oo]
         f.write(''.join(ll))
-    # b = time.time()
-    # oo = pgvad.vad(fn)
-    # print('time:', time.time() - b)
-    # import soundfile as sf
-    # from io import BytesIO
-    # audio = open(fn, 'rb').read()
-    # data, samplerate = sf.read(BytesIO(audio), dtype='float32')
-    # print('xxxxx', len(data), samplerate)
-    # npdata = data  #np.array(data, dtype='float32')
-    # print('======', data == npdata)
-    # tl = pgvad.vad_mem(npdata, samplerate)
-    # print(tl)

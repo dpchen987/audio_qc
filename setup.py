@@ -33,6 +33,8 @@ def get_package_data():
     files += glob('asr_api_server/templates/*.html')
     files += glob('asr_api_server/gpvad_onnx/labelencoders/vad.pkl')
     files += glob('asr_api_server/gpvad_onnx/onnx_models/*.onnx')
+    files += glob('asr_api_server/gpvad/labelencoders/vad.pkl')
+    files += glob('asr_api_server/gpvad/pretrained_models/*/*.pth')
     new = []
     for f in files:
         p = f.find('/')
@@ -88,8 +90,7 @@ def main(use_cython=False):
         packages = [pkg_name, f'{pkg_name}.data_model',]  ## 防止把其它.py 文件也打包到.whl文件里面
     else:
         ext_modules = []
-        packages = [pkg_name]
-    print('sssss', packages)
+        packages = find_packages()
     setup(
         name=pkg_name,
         version=get_version(),
@@ -106,15 +107,16 @@ def main(use_cython=False):
             ]
         },
         package_data={pkg_name: get_package_data()},
-        # include_package_data=True,
-        cmdclass={
-            'build_py': build_py
-        },
+        include_package_data=True,
+    # cmdclass={
+    #         'build_py': build_py
+    #     },
 
     )
+    print('sssss', packages)
 
 
 if __name__ == '__main__':
     # set False if no need to cythonize
-    use_cython = True
+    use_cython = False
     main(use_cython)

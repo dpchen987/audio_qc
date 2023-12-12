@@ -110,9 +110,9 @@ async def run(wav_scp, args):
     texts = []
     request_times = []
     for i, (_uttid, data) in enumerate(wav_scp):
-        idx = i % 2
-        uri = uris[idx]
-        # uri = args.ws_uri
+        # idx = i % 2
+        # uri = uris[idx]
+        uri = args.ws_uri
         task = asyncio.create_task(ws_rec(data, uri))
         tasks.append((_uttid, task))
         if len(tasks) < args.num_concurrence:
