@@ -49,7 +49,7 @@ async def data_vad(audio_info: AudioInfo = Body(..., title="音频信息")):
 
 def run_api():
     uvicorn.run(
-        "__main__:app",
+        "asr_api_server.vad_api:app",
         host=CONF['host'],
         port=CONF['port'],
         workers=CONF['vad_workers'],
