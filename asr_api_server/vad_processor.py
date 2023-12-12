@@ -4,6 +4,7 @@ import base64
 import json
 from .vad_gpvad import vad_duration
 from .logger import logger
+from asr_api_server import asr_process
 
 VAD_NUM = asyncio.Semaphore(100)
 
@@ -33,7 +34,11 @@ async def speech_vad(audio_info):
                 return
             # 音频vad
             b = time.time()
-            total = vad_duration(audio)
+            # pre vad
+            total = vad_duration(audio, prevad=True)
+            if total < 1.5:
+                # full vad
+                total = max(total, vad_duration(audio, prevad=False))
             logger.info(f'vad time: {time.time() - b}, {total = }')
             vad_result['data'] = json.dumps(total)
     except Exception as e:
