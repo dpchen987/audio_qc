@@ -54,14 +54,14 @@ async def test_coro(api, taskid, audio_url, result):
 
 
 async def main(args):
-    audio_urls = []
-    with open(args.audio_list) as f:
-        for line in f:
-            zz = line.strip()
-            if not zz.startswith('http'):
-                print('bad', line)
-                continue
-            audio_urls.append(zz)
+    audio_urls = ['http://localhost:9000/z-60s.wav'] * 1000
+    # with open(args.audio_list) as f:
+    #     for line in f:
+    #         zz = line.strip()
+    #         if not zz.startswith('http'):
+    #             print('bad', line)
+    #             continue
+    #         audio_urls.append(zz)
     print(f'{len(audio_urls) = }')
     tasks = set()
     result = []
