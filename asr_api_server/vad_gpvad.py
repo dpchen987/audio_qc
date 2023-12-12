@@ -11,7 +11,7 @@ else:
     from asr_api_server.gpvad.forward import GPVAD
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
-VAD = GPVAD('t2bal', use_gpu=CONF['vad_gpu'])
+VAD = GPVAD(use_gpu=config.CONF['vad_gpu'])
 
 
 def cut(timeline, data, samplerate):
@@ -62,12 +62,35 @@ def cut_to_max(segments, samplerate):
     return new
 
 
-def vad_duration(audio):
+# def vad_duration(audio):
+#     bio = BytesIO(audio)
+#     timeline = VAD.vad(bio)
+#     total = 0
+#     for i, tl in enumerate(timeline):
+#         duration = tl[1] - tl[0]
+#         print(f'{duration = }')
+#         total += duration
+#     total = total / 1000
+#     return total
+
+def vad_duration(audio, prevad=False):
+    "vad_duration"
     bio = BytesIO(audio)
-    timeline = VAD.vad(bio)
+    if prevad:
+        wav, sr = sf.read(bio, stop=SAMPLE_RATE * 10, dtype='float32')
+    else:
+        wav, sr = sf.read(bio, start=SAMPLE_RATE * 8, dtype='float32')
+        logger.info(f'----Full vad !----')
+    if not wav.size:
+        logger.info(f'empty audio !')
+        return 0
+    if sr != SAMPLE_RATE:
+        wav, sr = librosa.load(wav, sr=SAMPLE_RATE, res_type="soxr_hq")
+    timeline = VAD.vad_tsk(wav, sr)
     total = 0
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
+        print(f'{duration = }')
         total += duration
     total = total / 1000
     return total
