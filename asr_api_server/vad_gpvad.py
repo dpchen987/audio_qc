@@ -1,12 +1,17 @@
 from io import BytesIO
 import soundfile as sf
 import numpy as np
-from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
-from asr_api_server.logger import logger
-from asr_api_server import config
+from .logger import logger
+from .config import CONF
+if CONF['vad_frame'] == 'onnxruntime':
+    logger.info('===== VAD framework : onnxruntime', )
+    from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
+else:
+    logger.info('===== VAD framework : pytorch', )
+    from asr_api_server.gpvad.forward import GPVAD
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
-VAD = GPVAD(use_gpu=config.CONF['vad_gpu'])
+VAD = GPVAD('t2bal', use_gpu=CONF['vad_gpu'])
 
 
 def cut(timeline, data, samplerate):
@@ -36,7 +41,7 @@ def cut(timeline, data, samplerate):
 
 
 def cut_to_max(segments, samplerate):
-    vad_max = config.CONF['vad_max']
+    vad_max = CONF['vad_max']
     max_len = int(vad_max * samplerate)
     new = []
     for s in segments:
@@ -63,7 +68,6 @@ def vad_duration(audio):
     total = 0
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
-        print(f'{duration = }')
         total += duration
     total = total / 1000
     return total
@@ -76,10 +80,10 @@ def vad(audio):
     data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
     segments = cut(timeline, data, samplerate)
-    if config.CONF['vad_max']:
-        logger.info("-- before cut_to_max(), {len(segments) = }, {config.CONF['vad_max'] = }")
+    if CONF['vad_max']:
+        logger.info("-- before cut_to_max(), {len(segments) = }, {CONF['vad_max'] = }")
         segments = cut_to_max(segments, samplerate)
-        logger.info("== after cut_to_max(), {len(segments) = }, {config.CONF['vad_max'] = }")
+        logger.info("== after cut_to_max(), {len(segments) = }, {CONF['vad_max'] = }")
     return segments, duration, samplerate
 
 
