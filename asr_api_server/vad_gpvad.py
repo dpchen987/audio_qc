@@ -92,7 +92,6 @@ def vad_duration(audio, prevad=False):
     total = 0
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
-        print(f'{duration = }')
         total = max(duration, total)
     total = total / 1000
     return total
