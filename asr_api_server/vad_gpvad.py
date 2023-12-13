@@ -3,6 +3,8 @@ import soundfile as sf
 import numpy as np
 from .logger import logger
 from .config import CONF
+import librosa
+
 if CONF['vad_frame'] == 'onnxruntime':
     logger.info('===== VAD framework : onnxruntime', )
     from asr_api_server.gpvad_onnx.infer_onnxruntime import GPVAD
@@ -11,8 +13,8 @@ else:
     from asr_api_server.gpvad.forward import GPVAD
 
 # 可选模型：'sre', 'a2_v2', 't2bal', (default:'t2bal').
-VAD = GPVAD(use_gpu=config.CONF['vad_gpu'])
-
+VAD = GPVAD(use_gpu=CONF['vad_gpu'])
+SAMPLE_RATE = 16000
 
 def cut(timeline, data, samplerate):
     segments = []
@@ -91,7 +93,7 @@ def vad_duration(audio, prevad=False):
     for i, tl in enumerate(timeline):
         duration = tl[1] - tl[0]
         print(f'{duration = }')
-        total += duration
+        total = max(duration, total)
     total = total / 1000
     return total
 
