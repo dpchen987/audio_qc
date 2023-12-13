@@ -22,34 +22,6 @@ def get_version():
     print('!!!! NO_VERSION')
     return 'NO_VERSION'
 
-def get_package_data():
-    from glob import glob
-    files = []
-    files += glob('asr_api_server/gpvad_onnx/labelencoders/vad.pkl')
-    files += glob('asr_api_server/gpvad_onnx/onnx_models/*.onnx')
-    files += glob('asr_api_server/gpvad/labelencoders/vad.pkl')
-    files += glob('asr_api_server/gpvad/pretrained_models/*/*.pth')
-    new = []
-    for f in files:
-        p = f.find('/')
-        n = f[p+1:]
-        new.append(n)
-    return new
-
-print(get_package_data())
-
-class MyBuildExt(build_ext):
-    def run(self):
-        build_ext.run(self)
-        build_dir = Path(self.build_lib)
-        root_dir = Path(__file__).parent
-        target_dir = build_dir if not self.inplace else root_dir
-        self.copy_file(Path('main_folder') / '__init__.py', root_dir, target_dir)
-
-    def copy_file(self, path, source_dir, destination_dir):
-        if not (source_dir / path).exists():
-            return
-        shutil.copyfile(str(source_dir / path), str(destination_dir / path))
 
 #as specified by @hoefling to ignore .py and not resource_folder
 class build_py(build_py_orig):
@@ -68,18 +40,46 @@ class build_py(build_py_orig):
 
 
 def main(use_cython=False):
-    extensions = [
-        Extension(f'{pkg_name}/*.so', [f"{pkg_name}/*.py"]),
-        Extension(f'{pkg_name}/gpvad_onnx/*.so', [f"{pkg_name}/gpvad_onnx/*.py"]),
+    py_modules = [
+        f'{pkg_name}/__init__',
+        f'{pkg_name}/vad_api',
+        f'{pkg_name}/config',
+        f'{pkg_name}/logger',
+        f'{pkg_name}/vad_processor',
+        f'{pkg_name}/vad_gpvad',
+        f'{pkg_name}/easytimer',
+        f'{pkg_name}/downloader',
+        f'{pkg_name}/vad_performance',
     ]
+    package_data={
+        f'{pkg_name}.gpvad': [
+            'asr_api_server/gpvad/labelencoders/vad.pkl',
+            'asr_api_server/gpvad/pretrained_models/t2bal/t2bal.pth',
+        ],
+        f'{pkg_name}.gpvad_onnx': [
+            'asr_api_server/gpvad_onnx/labelencoders/vad.pkl',
+            'asr_api_server/gpvad_onnx/onnx_models/t2bal.onnx',
+        ]
+    }
+    pyfiles = [p + '.py' for p in py_modules]
+    extensions = []
+    for p in py_modules:
+        ex = Extension(f'{p}', [f'{p}.py'])
+        extensions.append(ex)
+    extensions.extend([
+        Extension(f'{pkg_name}/gpvad_onnx/*.so', [f"{pkg_name}/gpvad_onnx/*.py"]),
+        Extension(f'{pkg_name}/gpvad/*.so', [f"{pkg_name}/gpvad/*.py"]),
+    ])
     if use_cython:
         ext_modules = cythonize(
                 extensions,
                 compiler_directives=dict(always_allow_keywords=True),
                 language_level=3)
-        # 解决 pydantic 的问题后，在ext_modules里面编译data_model，
-        # 则 packages=[]
-        packages = [pkg_name, f'{pkg_name}.data_model',]  ## 防止把其它.py 文件也打包到.whl文件里面
+        packages = [
+            f'{pkg_name}.gpvad',
+            f'{pkg_name}.gpvad_onnx',
+            f'{pkg_name}.data_model',
+        ]
         py_modules = []
     else:
         ext_modules = []
@@ -88,14 +88,7 @@ def main(use_cython=False):
             f'{pkg_name}.gpvad_onnx',
             f'{pkg_name}.data_model',
         ]
-        py_modules = [
-            f'{pkg_name}/vad_api',
-            f'{pkg_name}/config',
-            f'{pkg_name}/logger',
-            f'{pkg_name}/vad_processor',
-            f'{pkg_name}/vad_gpvad',
-        ]
-    print(f'{packages = }')
+        
     setup(
         name=pkg_name,
         version=get_version(),
@@ -111,13 +104,18 @@ def main(use_cython=False):
                 'vad_api_server=asr_api_server.vad_api:run_api',
             ]
         },
-        package_data={pkg_name: get_package_data()},
         include_package_data=True,
+        exclude_package_data={"": ["*.c", "*.py"]},
+        cmdclass={
+            'build_py': build_py
+        },
+
+
     )
-    print('sssss', packages)
+    print(f'{packages = }')
 
 
 if __name__ == '__main__':
     # set False if no need to cythonize
-    use_cython = False
+    use_cython = True 
     main(use_cython)
