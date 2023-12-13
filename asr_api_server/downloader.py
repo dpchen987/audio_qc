@@ -1,4 +1,7 @@
+import time
 import aiohttp
+
+from .logger import logger
 
 
 async def download(url, timeout_sec: int = 80, max_attempts: int = 3):
