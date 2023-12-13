@@ -4,7 +4,7 @@ import base64
 import json
 from .vad_gpvad import vad_duration
 from .logger import logger
-from asr_api_server import asr_process
+from .downloader import download
 
 VAD_NUM = asyncio.Semaphore(100)
 
@@ -17,7 +17,7 @@ async def speech_vad(audio_info):
         async with VAD_NUM:
             # 音频下载
             if audio_info.trans_type == 1:
-                audio, msg = await asr_process.download(audio_info.file_path)
+                audio, msg = await download(audio_info.file_path)
             else:
                 # with open(audio_info.file_path, 'rb') as f:
                 #     audio = f.read()
