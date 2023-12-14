@@ -12,7 +12,7 @@ import soundfile as sf
 import base64
 
 apis = [
-    'http://127.0.0.1:8302/asr/v1/speech_vad',
+    'http://127.0.0.1:8300/asr/v1/speech_vad',
     # 'http://127.0.0.1:8301/asr/v1/speech_vad',
     # 'http://127.0.0.1:8302/asr/v1/speech_vad',
     # 'http://127.0.0.1:8303/asr/v1/speech_vad',
@@ -24,7 +24,7 @@ with open(audio_pth, 'rb') as fin:
         audio_data = fin.read()
 bs64 = base64.b64encode(audio_data).decode('latin1')
 
-     
+
 def print_result(info):
     length = max([len(k) for k in info])
     for k, v in info.items():
@@ -55,7 +55,7 @@ async def test_coro(task_id, times):
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='')                                                                                                                
+    parser = argparse.ArgumentParser(description='')
     parser.add_argument(
         '-t', '--total', type=int, default=100,
         help='total queries for this run')
