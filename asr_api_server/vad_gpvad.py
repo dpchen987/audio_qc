@@ -16,11 +16,34 @@ else:
 VAD = GPVAD(use_gpu=CONF['vad_gpu'])
 SAMPLE_RATE = 16000
 
-def cut(timeline, data, samplerate):
+
+def cut_timeline(timeline, max_duration):
+    print(f'old timeline: {timeline}')
+    new_timeline = []
+    for i, tl in enumerate(timeline):
+        du = tl[1] - tl[0]
+        if du <= max_duration or (i == len(timeline) - 1 and du < 20):
+            new_timeline.append(tl)
+            continue
+        j = 1
+        while True:
+            x = [tl[0] + (j-1) * max_duration, tl[0] + j * max_duration]
+            new_timeline.append(x)
+            du = tl[1] - j * max_duration
+            if du <= max_duration:
+                x = [tl[0] + j * max_duration, tl[1]]
+                new_timeline.append(x)
+                break
+            j += 1
+    print(f'new timeline: {new_timeline}')
+    return new_timeline
+
+
+def cut(timeline, data, samplerate, max_duration=15000):
+    new_timeline = cut_timeline(timeline, max_duration)
     segments = []
     last_duration = 0
-    max_duration = 3000  # ms
-    for i, tl in enumerate(timeline):
+    for i, tl in enumerate(new_timeline):
         duration = tl[1] - tl[0]
         start = int(tl[0] / 1000 * samplerate)
         end = int(tl[1] / 1000 * samplerate)
@@ -29,51 +52,19 @@ def cut(timeline, data, samplerate):
             segments.append(segment)
             last_duration = duration
             continue
-        if duration < max_duration and (
-                i == len(timeline) - 1 or
-                last_duration < max_duration):
-            # this seg append to last seg
+        if duration + last_duration <= max_duration:
+        # merge two segment to one
             segments[-1] = np.append(segments[-1], segment)
             last_duration += duration
         else:
             segments.append(segment)
             last_duration = duration
-    print(f'===== vad: {len(timeline) = }, {len(segments) = }')
+    print(f'===== vad: {len(timeline) = }, {len(new_timeline) = }, {len(segments) = }')
+    duration_old = sum([t[1] - t[0] for t in timeline])
+    duration_new = sum([t[1] - t[0] for t in new_timeline])
+    print(f'{duration_old = }, {duration_new = }')
     return segments
 
-
-def cut_to_max(segments, samplerate):
-    vad_max = CONF['vad_max']
-    max_len = int(vad_max * samplerate)
-    new = []
-    for s in segments:
-        if len(s) < max_len:
-            new.append(s)
-            continue
-        count = len(s) // max_len
-        if len(s) % max_len:
-            count += 1
-        step = len(s) // count
-        if len(s) % count:
-            step += 1
-        for i in range(count):
-            begin = i * step
-            end = begin + step
-            n = s[begin:end]
-            new.append(n)
-    return new
-
-
-# def vad_duration(audio):
-#     bio = BytesIO(audio)
-#     timeline = VAD.vad(bio)
-#     total = 0
-#     for i, tl in enumerate(timeline):
-#         duration = tl[1] - tl[0]
-#         print(f'{duration = }')
-#         total += duration
-#     total = total / 1000
-#     return total
 
 def vad_duration(audio, prevad=False):
     "vad_duration"
@@ -103,11 +94,8 @@ def vad(audio):
     bio.seek(0)
     data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
+    max_duration = max(CONF['vad_max'], 10000)  # if vad_max < 10000, then 10000
     segments = cut(timeline, data, samplerate)
-    if CONF['vad_max']:
-        logger.info("-- before cut_to_max(), {len(segments) = }, {CONF['vad_max'] = }")
-        segments = cut_to_max(segments, samplerate)
-        logger.info("== after cut_to_max(), {len(segments) = }, {CONF['vad_max'] = }")
     return segments, duration, samplerate
 
 
@@ -116,6 +104,7 @@ if __name__ == '__main__':
     fp = sys.argv[1]
     data = open(fp, 'rb').read()
     s, d, sr = vad(data)
-    print(len(s), d, sr)
+    durations = [len(i)/sr for i in s]
+    print(len(s), d, sr, f'{durations = }, {sum(durations) = }')
     for i, x in enumerate(s):
         sf.write(f'{i}.wav', x, sr)
