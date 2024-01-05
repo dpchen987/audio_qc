@@ -1,3 +1,4 @@
+import re
 import json
 import websockets
 from asr_api_server import config
@@ -75,8 +76,6 @@ async def funasr_triton_rec(data: bytes) -> str:
     :param data: int16字节音频数据
     :return:
     """
-    results = []
-
     samples = np.frombuffer(data, dtype='int16')
     samples = np.array([samples], dtype=np.float32)
     lengths = np.array([[len(samples)]], dtype=np.int32)
@@ -106,10 +105,11 @@ async def funasr_triton_rec(data: bytes) -> str:
         outputs=outputs,
     )
     text = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
-
-    results.append(text)
-
-    return ''.join(results)
+    # 替换语音片段merge时加的哈哈（被识别为呵呵）
+    # text = re.sub(r'哈{2,8}|呵{2,8}|,{2,8}', ',', text).strip(',')
+    # replace() is 9x faster than re.sub()
+    text = text.replace('哈哈', ',').replace('呵呵', ',')
+    return text
 
 
 async def wenet_websocket_rec(data):
