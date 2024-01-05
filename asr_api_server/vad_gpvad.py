@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 import soundfile as sf
 import numpy as np
@@ -17,12 +18,23 @@ VAD = GPVAD(use_gpu=CONF['vad_gpu'])
 SAMPLE_RATE = 16000
 
 
-def cut_timeline(timeline, max_duration):
-    print(f'old timeline: {timeline}')
+def load_joiner():
+    dname = os.path.dirname(__file__)
+    path = os.path.join(dname, 'gpvad_onnx/labelencoders/haha.wav')
+    data, samplerate = sf.read(path, dtype='int16')
+    duration = int(len(data) / samplerate * 1000)
+    logger.info(f'haha wav {duration = }, {data.shape = }')
+    return data, duration
+
+
+JOINER_WAV, JOINER_LEN = load_joiner()
+
+
+def cut_long(timeline, max_duration):
     new_timeline = []
     for i, tl in enumerate(timeline):
         du = tl[1] - tl[0]
-        if du <= max_duration or (i == len(timeline) - 1 and du < 20):
+        if du <= max_duration or (i == len(timeline) - 1 and du < 18000):
             new_timeline.append(tl)
             continue
         j = 1
@@ -35,12 +47,11 @@ def cut_timeline(timeline, max_duration):
                 new_timeline.append(x)
                 break
             j += 1
-    print(f'new timeline: {new_timeline}')
     return new_timeline
 
 
 def cut(timeline, data, samplerate, max_duration=15000):
-    new_timeline = cut_timeline(timeline, max_duration)
+    new_timeline = cut_long(timeline, max_duration)
     segments = []
     last_duration = 0
     for i, tl in enumerate(new_timeline):
@@ -52,17 +63,15 @@ def cut(timeline, data, samplerate, max_duration=15000):
             segments.append(segment)
             last_duration = duration
             continue
-        if duration + last_duration <= max_duration:
-        # merge two segment to one
-            segments[-1] = np.append(segments[-1], segment)
-            last_duration += duration
+        if ((duration + last_duration + JOINER_LEN <= max_duration) or 
+            (i == len(new_timeline) - 1 and duration < 2000)):
+            # merge two segment to one
+            segments[-1] = np.concatenate((segments[-1], JOINER_WAV, segment))
+            last_duration += duration + JOINER_LEN
         else:
             segments.append(segment)
             last_duration = duration
-    print(f'===== vad: {len(timeline) = }, {len(new_timeline) = }, {len(segments) = }')
-    duration_old = sum([t[1] - t[0] for t in timeline])
-    duration_new = sum([t[1] - t[0] for t in new_timeline])
-    print(f'{duration_old = }, {duration_new = }')
+    logger.info(f'===== vad: {len(timeline) = }, {len(new_timeline) = }, {len(segments) = }')
     return segments
 
 
@@ -94,7 +103,8 @@ def vad(audio):
     bio.seek(0)
     data, samplerate = sf.read(bio, dtype='int16')
     duration = len(data) / samplerate
-    max_duration = max(CONF['vad_max'], 10000)  # if vad_max < 10000, then 10000
+    # if vad_max < 10000ms, then 10000ms
+    max_duration = max(CONF['vad_max'], 10000) 
     segments = cut(timeline, data, samplerate)
     return segments, duration, samplerate
 
