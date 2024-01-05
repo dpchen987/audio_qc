@@ -18,7 +18,7 @@ else
   cd ..
   rm -rf build dist
   python setup_vad.py bdist_wheel
-  find . -print0 -name "*.c" | xargs rm
+  find . -name "*.c" | xargs rm
   if [ -e dist/$vad_api_so_whl ]; then
     vad_api_whl=$vad_api_so_whl
   else
