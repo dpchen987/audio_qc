@@ -12,9 +12,9 @@ CONF = dict(
     port=8300,
     url_db='./db',  # must be set as environmente
     concurrency=10,
-    decoder_server='funasr_websocket',  # `wenet_websocket` or `funasr_triton` or `funasr_websocket`
+    decoder_server='funasr_triton',  # `wenet_websocket` or `funasr_triton` or `funasr_websocket`
     # example: wenet_websocket_uri=['ws://127.0.0.1:8301'], funasr_triton_uri=['127.0.0.1:8001'], funasr_websocket_uri=['127.0.0.1:10095']
-    decoder_server_uri=['127.0.0.1:10095'],
+    decoder_server_uri=['127.0.0.1:8301'],
     download_timeout=20,  # audio download timeout seconds
     use_vad=True,  # whether use local vad
     vad_gpu=True,
