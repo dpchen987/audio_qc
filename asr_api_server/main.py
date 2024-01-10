@@ -28,18 +28,18 @@ def create_app():
 
 app = create_app()
 
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(asy_timer())
 
-@app.get("/test")
-async def test():
-    html_path = os.path.join(root_dir, 'templates/test.html')
-    with open(html_path) as f:
-        html = f.read()
-    return HTMLResponse(content=html)
+# @app.get("/test")
+# async def test():
+#     html_path = os.path.join(root_dir, 'templates/test.html')
+#     with open(html_path) as f:
+#         html = f.read()
+#     return HTMLResponse(content=html)
 
 
 def run():
