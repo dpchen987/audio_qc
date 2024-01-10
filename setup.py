@@ -32,6 +32,7 @@ def get_package_data():
     files += glob('asr_api_server/static/fonts/*')
     files += glob('asr_api_server/templates/*.html')
     files += glob('asr_api_server/gpvad_onnx/labelencoders/vad.pkl')
+    files += glob('asr_api_server/gpvad_onnx/labelencoders/haha.wav')
     files += glob('asr_api_server/gpvad_onnx/onnx_models/*.onnx')
     files += glob('asr_api_server/gpvad/labelencoders/vad.pkl')
     files += glob('asr_api_server/gpvad/pretrained_models/*/*.pth')
@@ -87,7 +88,7 @@ def main(use_cython=False):
                 language_level=3)
         # 解决 pydantic 的问题后，在ext_modules里面编译data_model，
         # 则 packages=[]
-        packages = [pkg_name, f'{pkg_name}.data_model',]  ## 防止把其它.py 文件也打包到.whl文件里面
+        packages = [f'{pkg_name}.gpvad_onnx', f'{pkg_name}.data_model',]  ## 防止把其它.py 文件也打包到.whl文件里面
     else:
         ext_modules = []
         packages = find_packages()
@@ -106,8 +107,9 @@ def main(use_cython=False):
                 'asr_api_server=asr_api_server.main:run',
             ]
         },
-        package_data={pkg_name: get_package_data()},
+        package_data={f'{pkg_name}.gpvad_onnx': get_package_data()},
         include_package_data=True,
+        exclude_package_data={"": ["*.c", "*.py"]},
     # cmdclass={
     #         'build_py': build_py
     #     },
