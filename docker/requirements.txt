@@ -10,4 +10,4 @@ soxr
 librosa
 onnxruntime-gpu
 protobuf
-tritonclient[all]
+tritonclient[grpc]
