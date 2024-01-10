@@ -202,13 +202,14 @@ class GPVAD:
             elif quant == 'fp16':
                 model_path = os.path.join(root_dir, 'onnx_models/audio2_vox2_fp16.onnx')
         if onnxruntime.get_device() == 'GPU' and use_gpu:
-            conf =  {
-                "cudnn_conv_use_max_workspace": '1',
-                "cudnn_conv1d_pad_to_nc1d": '1',
-                # 'cudnn_conv_algo_search': 'EXHAUSTIVE',
-                # 'do_copy_in_default_stream': True,
-            }
-            providers = [("CUDAExecutionProvider", conf)]
+            # conf =  {
+            #     "cudnn_conv_use_max_workspace": '1',
+            #     "cudnn_conv1d_pad_to_nc1d": '1',
+            #     # 'cudnn_conv_algo_search': 'EXHAUSTIVE',
+            #     # 'do_copy_in_default_stream': True,
+            # }
+            # providers = [("CUDAExecutionProvider", conf)]
+            providers = ["CUDAExecutionProvider"]
         else:
             providers = ['CPUExecutionProvider']
         print(f'===== GPVAD {providers = }, {model_path = }')
