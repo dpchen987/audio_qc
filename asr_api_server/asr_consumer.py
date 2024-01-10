@@ -6,6 +6,7 @@ import os
 import time
 import json
 import asyncio
+import aiohttp
 import base64
 from asr_api_server import asr_process
 from asr_api_server.logger import logger
