@@ -32,18 +32,30 @@ JOINER_WAV, JOINER_LEN = load_joiner()
 
 def cut_long(timeline, max_duration):
     new_timeline = []
+    # print('cut_long....')
     for i, tl in enumerate(timeline):
         du = tl[1] - tl[0]
-        if du <= max_duration or (i == len(timeline) - 1 and du < 18000):
+        # print(f'\t{i = }, {du = }')
+        if du <= max_duration:  # or (i == len(timeline) - 1 and du < max_duration+2000):
             new_timeline.append(tl)
             continue
         j = 1
+        # print(f'\t\tloooooooo: {i = }, {du = }')
+        # 从头按max_duration切割，或者以下的均分切割
+        count = du // max_duration
+        if du % max_duration:
+            count += 1
+        step = du // count
+        if du % count:
+            step += 1
         while True:
-            x = [tl[0] + (j-1) * max_duration, tl[0] + j * max_duration]
+            begin = tl[0] + (j-1) * step
+            end = tl[0] + j * step
+            x = [begin, end]
             new_timeline.append(x)
-            du = tl[1] - j * max_duration
+            du = tl[1] - end
             if du <= max_duration:
-                x = [tl[0] + j * max_duration, tl[1]]
+                x = [end, tl[1]]
                 new_timeline.append(x)
                 break
             j += 1
@@ -54,8 +66,10 @@ def cut(timeline, data, samplerate, max_duration=15000):
     new_timeline = cut_long(timeline, max_duration)
     segments = []
     last_duration = 0
+    # print('merging...')
     for i, tl in enumerate(new_timeline):
         duration = tl[1] - tl[0]
+        # print(f'\t{i = }, {duration = }')
         start = int(tl[0] / 1000 * samplerate)
         end = int(tl[1] / 1000 * samplerate)
         segment = data[start: end]
@@ -105,16 +119,17 @@ def vad(audio):
     duration = len(data) / samplerate
     # if vad_max < 10000ms, then 10000ms
     max_duration = max(CONF['vad_max'], 10000) 
-    segments = cut(timeline, data, samplerate)
+    segments = cut(timeline, data, samplerate, max_duration)
     return segments, duration, samplerate
 
 
 if __name__ == '__main__':
     import sys
     fp = sys.argv[1]
+    fname = fp.split('/')[-1]
     data = open(fp, 'rb').read()
     s, d, sr = vad(data)
     durations = [len(i)/sr for i in s]
     print(len(s), d, sr, f'{durations = }, {sum(durations) = }')
     for i, x in enumerate(s):
-        sf.write(f'{i}.wav', x, sr)
+        sf.write(f'{fname}-{i}.wav', x, sr)
