@@ -1,0 +1,10 @@
+export ASR_DECODER_SERVER=funasr_triton
+export ASR_DECODER_SERVER_URI=127.0.0.1:8301
+export USE_VAD="True"
+export ASR_VAD_MAX=15000
+export TZ=Asia/Shanghai
+export ASR_API_HOST=0.0.0.0
+export ASR_API_URL_DB=tmp/d0/url.db
+export ASR_API_PORT=8300
+export ASR_API_CONCURRENCY=100
+asr_api_server  | tee z-api0-`date --iso-8601=seconds`.log
