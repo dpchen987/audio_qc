@@ -66,6 +66,7 @@ def cut(timeline, data, samplerate, max_duration=15000):
     new_timeline = cut_long(timeline, max_duration)
     segments = []
     last_duration = 0
+    shorts = []
     # print('merging...')
     for i, tl in enumerate(new_timeline):
         duration = tl[1] - tl[0]
@@ -73,18 +74,32 @@ def cut(timeline, data, samplerate, max_duration=15000):
         start = int(tl[0] / 1000 * samplerate)
         end = int(tl[1] / 1000 * samplerate)
         segment = data[start: end]
-        if i == 0:
-            segments.append(segment)
-            last_duration = duration
-            continue
-        if ((duration + last_duration + JOINER_LEN <= max_duration) or 
+        if ((duration + last_duration + JOINER_LEN <= max_duration) or
             (i == len(new_timeline) - 1 and duration < 2000)):
             # merge two segment to one
-            segments[-1] = np.concatenate((segments[-1], JOINER_WAV, segment))
+            # segments[-1] = np.concatenate((segments[-1], JOINER_WAV, segment))
+            shorts.append(segment)
+            shorts.append(JOINER_WAV)
             last_duration += duration + JOINER_LEN
         else:
-            segments.append(segment)
-            last_duration = duration
+            if len(shorts) == 2:
+                segments.append(shorts[0])
+            elif len(shorts) > 2:
+                shorts.pop(-1)
+                segments.append(np.concatenate(shorts))
+            if duration >= max_duration:
+                segments.append(segment)
+                shorts = []
+                last_duration = 0
+            else:
+                shorts = [segment, JOINER_WAV]
+                last_duration = duration
+    if len(shorts) == 2:
+        segments.append(shorts[0])
+    elif len(shorts) > 2:
+        shorts.pop(-1)
+        segments.append(np.concatenate(shorts))
+            
     logger.info(f'===== vad: {len(timeline) = }, {len(new_timeline) = }, {len(segments) = }')
     return segments
 
@@ -113,13 +128,14 @@ def vad_duration(audio, prevad=False):
 
 def vad(audio):
     bio = BytesIO(audio)
-    timeline = VAD.vad(bio)
-    bio.seek(0)
-    data, samplerate = sf.read(bio, dtype='int16')
+    data, samplerate = sf.read(bio, dtype='float32')
+    timeline = VAD.vad_mem(data, samplerate)
+    print(f'{timeline = }')
+    data = (data * 32768.0).astype('int16')  # wav from float32 to int16
     duration = len(data) / samplerate
     # if vad_max < 10000ms, then 10000ms
-    max_duration = max(CONF['vad_max'], 10000) 
-    segments = cut(timeline, data, samplerate, max_duration)
+    max_duration = max(CONF['vad_max'], 10000)
+    segments = cut2(timeline, data, samplerate, max_duration)
     return segments, duration, samplerate
 
 
