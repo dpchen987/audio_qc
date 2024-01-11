@@ -106,6 +106,7 @@ async def funasr_triton_rec(data: bytes) -> str:
     )
     text = response.as_numpy("TRANSCRIPTS")[0].decode("utf-8")
     # 替换语音片段merge时加的哈哈（被识别为呵呵）
+    print(f'origin {text = }')
     text = re.sub(r'哈{2,8}|呵{2,8}|,{2,8}', ',', text)
     text = text.strip(',')
     # replace() is 9x faster than re.sub()
