@@ -135,7 +135,7 @@ def vad(audio):
     duration = len(data) / samplerate
     # if vad_max < 10000ms, then 10000ms
     max_duration = max(CONF['vad_max'], 10000)
-    segments = cut2(timeline, data, samplerate, max_duration)
+    segments = cut(timeline, data, samplerate, max_duration)
     return segments, duration, samplerate
 
 
