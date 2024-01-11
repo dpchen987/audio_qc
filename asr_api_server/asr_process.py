@@ -101,7 +101,6 @@ async def rec_vad_ws(audio_origin):
     logger.info(msg)
     text = ','.join([r['text'] for r in results])
     text = re.sub(r'<.*?>', '', text)
-    logger.info(text)
     return text, exception
 
 
@@ -135,3 +134,12 @@ async def rec(audio_origin):
         return await rec_vad_ws(audio_origin)
     else:
         return await rec_no_vad(audio_origin)
+
+
+if __name__ == '__main__':
+    import sys
+    fp = sys.argv[1]
+    fname = fp.split('/')[-1]
+    data = open(fp, 'rb').read()
+    rest = asyncio.run(rec(data))
+    print(rest)
