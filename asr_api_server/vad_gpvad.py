@@ -129,10 +129,15 @@ def vad_duration(audio, prevad=False):
 def vad(audio):
     bio = BytesIO(audio)
     data, samplerate = sf.read(bio, dtype='float32')
+    duration = len(data) / samplerate
+    if len(data) < 2048:
+        # tool short audio will get Warning from librosa/core/spectrum.py:257:
+        # UserWarning: n_fft=2048 is too large for input signal of length=320
+        # then it makes vad error
+        return [], duration, samplerate
     timeline = VAD.vad_mem(data, samplerate)
     print(f'{timeline = }')
     data = (data * 32768.0).astype('int16')  # wav from float32 to int16
-    duration = len(data) / samplerate
     # if vad_max < 10000ms, then 10000ms
     max_duration = max(CONF['vad_max'], 10000)
     segments = cut(timeline, data, samplerate, max_duration)
