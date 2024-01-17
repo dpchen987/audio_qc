@@ -18,8 +18,8 @@ else
     cd ..
     rm -rf build dist
     python setup.py bdist_wheel
-    cd asr_api_server && find . -name "*.c" | xargs rm
-    cd ..
+    # cd asr_api_server && find . -name "*.c" | xargs rm
+    # cd ..
     cp dist/$app_whl docker/
     cd docker
 fi
