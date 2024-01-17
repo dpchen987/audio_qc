@@ -72,7 +72,7 @@ if __name__ == "__main__":
     client_log = argv[1]
     callback_log = argv[2]
     export_text(client_log, callback_log)
-    # parse(client_log, callback_log)
+    parse(client_log, callback_log)
 
 
 

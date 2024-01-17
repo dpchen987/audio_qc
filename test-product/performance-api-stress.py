@@ -17,8 +17,8 @@ api_indx = 0
 def get_api():
     global api_indx
     apis = [
-        'http://127.0.0.1:8300/asr/v1/speech_rec',
-        'http://127.0.0.1:8400/asr/v1/speech_rec',
+        'http://127.0.0.1:8900/asr/v1/speech_rec',
+        'http://127.0.0.1:8900/asr/v1/speech_rec',
     ]
     api = apis[api_indx]
     api_indx += 1 
@@ -89,6 +89,8 @@ async def main(args):
     tasks = set()
     result = []
     begin = time.time()
+    to_sleep = 1 / (args.concurrence + 1)
+    print(f'{to_sleep = }')
     for i, path in enumerate(audios):
         with open(path, 'rb') as f:
             data = f.read()
@@ -101,14 +103,10 @@ async def main(args):
                 test_coro(api_uri, task_id, data))
         tasks.add(task)
         task.add_done_callback(tasks.discard)
-        # if len(tasks) < args.concurrence:
-        #     continue
-        if i % args.concurrence == 0:
-            gap = 100 // args.concurrence * args.concurrence
-            if i % gap == 0:
-                print((f'{i=}, start {args.concurrence} '
-                       f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
-            await asyncio.sleep(1)
+        await asyncio.sleep(to_sleep)
+        if i % 100 == 0:
+            print((f'{i=}, start {args.concurrence} '
+                   f'queries @ {time.strftime("%m-%d %H:%M:%S")}'))
     while tasks:
         await asyncio.sleep(0.1)
     with open(f'{now}.log', 'w') as f:
